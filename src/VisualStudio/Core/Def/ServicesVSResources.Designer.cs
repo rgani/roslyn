@@ -106,15 +106,6 @@ namespace Microsoft.VisualStudio.LanguageServices {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Building Project.
-        /// </summary>
-        internal static string BuildingProject {
-            get {
-                return ResourceManager.GetString("BuildingProject", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to C#/VB Build Table Data Source.
         /// </summary>
         internal static string BuildTableSourceName {
@@ -439,6 +430,15 @@ namespace Microsoft.VisualStudio.LanguageServices {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Low memory detected. Full solution analysis disabled for this solution..
+        /// </summary>
+        internal static string FullSolutionAnalysisOff {
+            get {
+                return ResourceManager.GetString("FullSolutionAnalysisOff", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Generated name:.
         /// </summary>
         internal static string GeneratedName {
@@ -525,6 +525,88 @@ namespace Microsoft.VisualStudio.LanguageServices {
         internal static string Inherits {
             get {
                 return ResourceManager.GetString("Inherits", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Install &apos;{0}&apos;.
+        /// </summary>
+        internal static string Install_0 {
+            get {
+                return ResourceManager.GetString("Install_0", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Installing &apos;{0}&apos;.
+        /// </summary>
+        internal static string Installing_0 {
+            get {
+                return ResourceManager.GetString("Installing_0", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Installing &apos;{0}&apos; completed.
+        /// </summary>
+        internal static string Installing_0_completed {
+            get {
+                return ResourceManager.GetString("Installing_0_completed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Installing &apos;{0}&apos; failed.
+        ///
+        ///Additional information: {1}.
+        /// </summary>
+        internal static string Installing_0_failed_Additional_information_1 {
+            get {
+                return ResourceManager.GetString("Installing_0_failed_Additional_information_1", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to To see what caused the issue, please try below.
+        ///
+        ///1. Close Visual Studio
+        ///2. Open a Visual Studio Developer Command Prompt
+        ///3. Set environment variable “TraceDesignTime” to true (set TraceDesignTime=true)
+        ///4. Delete .vs directory/.suo file
+        ///5. Restart VS from the command prompt you set the environment varaible (devenv)
+        ///6. Open the solution
+        ///7. Check &apos;{0}&apos; and look for the failed tasks (FAILED).
+        /// </summary>
+        internal static string IntellisenseBuildFailedDescription {
+            get {
+                return ResourceManager.GetString("IntellisenseBuildFailedDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Additional information:.
+        /// </summary>
+        internal static string IntellisenseBuildFailedDescriptionExtra {
+            get {
+                return ResourceManager.GetString("IntellisenseBuildFailedDescriptionExtra", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Error encountered while loading the project. Some project features, such as full solution analysis for the failed project and projects that depend on it, have been disabled..
+        /// </summary>
+        internal static string IntellisenseBuildFailedMessage {
+            get {
+                return ResourceManager.GetString("IntellisenseBuildFailedMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Project loading failed..
+        /// </summary>
+        internal static string IntellisenseBuildFailedTitle {
+            get {
+                return ResourceManager.GetString("IntellisenseBuildFailedTitle", resourceCulture);
             }
         }
         
@@ -718,6 +800,24 @@ namespace Microsoft.VisualStudio.LanguageServices {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Move {0} below {1}.
+        /// </summary>
+        internal static string MoveDownAutomationText {
+            get {
+                return ResourceManager.GetString("MoveDownAutomationText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Move {0} above {1}.
+        /// </summary>
+        internal static string MoveUpAutomationText {
+            get {
+                return ResourceManager.GetString("MoveUpAutomationText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Name:.
         /// </summary>
         internal static string Name {
@@ -806,6 +906,24 @@ namespace Microsoft.VisualStudio.LanguageServices {
         internal static string Overrides {
             get {
                 return ResourceManager.GetString("Overrides", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Package install failed: {0}.
+        /// </summary>
+        internal static string Package_install_failed_0 {
+            get {
+                return ResourceManager.GetString("Package_install_failed_0", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Package uninstall failed: {0}.
+        /// </summary>
+        internal static string Package_uninstall_failed_0 {
+            get {
+                return ResourceManager.GetString("Package_uninstall_failed_0", resourceCulture);
             }
         }
         
@@ -985,20 +1103,20 @@ namespace Microsoft.VisualStudio.LanguageServices {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Remove {0}.
+        /// </summary>
+        internal static string RemoveAutomationText {
+            get {
+                return ResourceManager.GetString("RemoveAutomationText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Remove suppressions.
         /// </summary>
         internal static string RemoveSuppressMultipleOccurrences {
             get {
                 return ResourceManager.GetString("RemoveSuppressMultipleOccurrences", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Resetting Interactive.
-        /// </summary>
-        internal static string ResettingInteractive {
-            get {
-                return ResourceManager.GetString("ResettingInteractive", resourceCulture);
             }
         }
         
@@ -1017,6 +1135,15 @@ namespace Microsoft.VisualStudio.LanguageServices {
         internal static string Restore {
             get {
                 return ResourceManager.GetString("Restore", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Restore {0}.
+        /// </summary>
+        internal static string RestoreAutomationText {
+            get {
+                return ResourceManager.GetString("RestoreAutomationText", resourceCulture);
             }
         }
         
@@ -1084,6 +1211,24 @@ namespace Microsoft.VisualStudio.LanguageServices {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Synchronize {0}.
+        /// </summary>
+        internal static string SynchronizeClassView {
+            get {
+                return ResourceManager.GetString("SynchronizeClassView", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Synchronizing with {0}....
+        /// </summary>
+        internal static string SynchronizingWithClassView {
+            get {
+                return ResourceManager.GetString("SynchronizingWithClassView", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to This workspace only supports opening documents on the UI thread..
         /// </summary>
         internal static string ThisWorkspaceOnlySupportsOpeningDocumentsOnTheUIThread {
@@ -1116,6 +1261,53 @@ namespace Microsoft.VisualStudio.LanguageServices {
         internal static string TypeDetails {
             get {
                 return ResourceManager.GetString("TypeDetails", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Uninstall &apos;{0}&apos;.
+        /// </summary>
+        internal static string Uninstall_0 {
+            get {
+                return ResourceManager.GetString("Uninstall_0", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Uninstalling &apos;{0}&apos;.
+        /// </summary>
+        internal static string Uninstalling_0 {
+            get {
+                return ResourceManager.GetString("Uninstalling_0", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Uninstalling &apos;{0}&apos; completed.
+        /// </summary>
+        internal static string Uninstalling_0_completed {
+            get {
+                return ResourceManager.GetString("Uninstalling_0_completed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Uninstalling &apos;{0}&apos; failed.
+        ///
+        ///Additional information: {1}.
+        /// </summary>
+        internal static string Uninstalling_0_failed_Additional_information_1 {
+            get {
+                return ResourceManager.GetString("Uninstalling_0_failed_Additional_information_1", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to &lt;Unknown&gt;.
+        /// </summary>
+        internal static string Unknown {
+            get {
+                return ResourceManager.GetString("Unknown", resourceCulture);
             }
         }
         
@@ -1192,7 +1384,7 @@ namespace Microsoft.VisualStudio.LanguageServices {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Analyzer assembly &apos;{0}&apos; depends on &apos;{1}&apos; but it was not found. Analyzers may not run correctly..
+        ///   Looks up a localized string similar to Analyzer assembly &apos;{0}&apos; depends on &apos;{1}&apos; but it was not found. Analyzers may not run correctly unless the missing assembly is added as an analyzer reference as well..
         /// </summary>
         internal static string WRN_MissingAnalyzerReferenceMessage {
             get {

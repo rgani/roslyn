@@ -2,7 +2,8 @@
 
 Imports Microsoft.CodeAnalysis.Editor.UnitTests.SignatureHelp
 Imports Microsoft.CodeAnalysis.Editor.UnitTests.Workspaces
-Imports Microsoft.CodeAnalysis.Editor.VisualBasic.SignatureHelp
+Imports Microsoft.CodeAnalysis.SignatureHelp
+Imports Microsoft.CodeAnalysis.VisualBasic.SignatureHelp
 
 Namespace Microsoft.CodeAnalysis.Editor.VisualBasic.UnitTests.SignatureHelp
     Public Class GetXmlNamespaceExpressionSignatureHelpProviderTests
@@ -16,8 +17,8 @@ Namespace Microsoft.CodeAnalysis.Editor.VisualBasic.UnitTests.SignatureHelp
             Return New GetXmlNamespaceExpressionSignatureHelpProvider()
         End Function
 
-        <WpfFact, Trait(Traits.Feature, Traits.Features.SignatureHelp)>
-        Public Sub TestInvocationForGetType()
+        <Fact, Trait(Traits.Feature, Traits.Features.SignatureHelp)>
+        Public Async Function TestInvocationForGetType() As Task
             Dim markup = <a><![CDATA[
 Class C
     Sub Foo()
@@ -32,7 +33,7 @@ End Class
                                      ReturnsXNamespaceObject,
                                      XMLNSToReturnObjectFor,
                                      currentParameterIndex:=0))
-            Test(markup, expectedOrderedItems)
-        End Sub
+            Await TestAsync(markup, expectedOrderedItems)
+        End Function
     End Class
 End Namespace

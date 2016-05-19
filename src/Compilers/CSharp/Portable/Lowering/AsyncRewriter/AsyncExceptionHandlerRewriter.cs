@@ -14,7 +14,7 @@ namespace Microsoft.CodeAnalysis.CSharp
     /// with surrogate replacements that keep actual handler code in regular code blocks.
     /// That allows these constructs to be further lowered at the async lowering pass.
     /// </summary>
-    internal sealed class AsyncExceptionHandlerRewriter : BoundTreeRewriterWithStackGuardWithoutRecursionOnTheLeftOfBinaryOperator 
+    internal sealed class AsyncExceptionHandlerRewriter : BoundTreeRewriterWithStackGuardWithoutRecursionOnTheLeftOfBinaryOperator
     {
         private readonly bool _generateDebugInfo;
         private readonly CSharpCompilation _compilation;
@@ -692,7 +692,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         }
 
         /// <summary>
-        /// Analyses method body for try blocks with awaits in finally blocks 
+        /// Analyzes method body for try blocks with awaits in finally blocks 
         /// Also collects labels that such blocks contain.
         /// </summary>
         private sealed class AwaitInFinallyAnalysis : LabelCollector

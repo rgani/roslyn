@@ -119,7 +119,7 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests
             Assert.Equal(SyntaxKind.SingleLineDocumentationCommentTrivia, trivia[0].Kind());
         }
 
-        [WorkItem(537500, "DevDiv")]
+        [WorkItem(537500, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/537500")]
         [Fact]
         [Trait("Feature", "Comments")]
         public void TestSingleLineDocCommentFollowedBySlash()
@@ -497,7 +497,7 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests
             var token = LexToken(text);
 
             Assert.NotEqual('\\', text[0]);
-            Assert.Equal(System.Globalization.UnicodeCategory.UppercaseLetter, Char.GetUnicodeCategory(text[0]));
+            Assert.Equal(System.Globalization.UnicodeCategory.UppercaseLetter, CharUnicodeInfo.GetUnicodeCategory(text[0]));
 
             Assert.NotNull(token);
             Assert.Equal(SyntaxKind.IdentifierToken, token.Kind());
@@ -1404,8 +1404,8 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests
             Assert.Equal(text, token.Text);
         }
 
-        [WorkItem(547238, "DevDiv")]
-        [Fact, WorkItem(547238, "DevDiv")]
+        [WorkItem(547238, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/547238")]
+        [Fact, WorkItem(547238, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/547238")]
         [Trait("Feature", "Literals")]
         public void TestNumericLiteralWithExponentAndDecimalSpecifier04()
         {
@@ -1416,7 +1416,7 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests
             Assert.Equal(SyntaxKind.NumericLiteralToken, token.Kind());
             var errors = token.Errors();
             Assert.Equal(1, errors.Length);
-            Assert.Equal((int)ErrorCode.ERR_FloatOverflow, errors[0].Code);
+            Assert.Equal((int)ErrorCode.ERR_InvalidReal, errors[0].Code);
             Assert.Equal(text, token.Text);
         }
 
@@ -2383,7 +2383,7 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests
         /// <summary>
         /// Earlier identifier syntax "[0-9]+#" not supported.
         /// </summary>
-        [WorkItem(1071347)]
+        [WorkItem(1071347, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/1071347")]
         [Fact]
         public void TestDebuggerAliasIdentifiers()
         {
@@ -2584,16 +2584,16 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests
             Assert.Equal(LexerCache.MaxKeywordLength, max);
         }
 
-        [WorkItem(545781, "DevDiv")]
+        [WorkItem(545781, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/545781")]
         [Fact]
         public void DecimalLiteralsOtherCulture()
         {
-            var oldCulture = Thread.CurrentThread.CurrentCulture;
+            var oldCulture = CultureInfo.CurrentCulture;
             try
             {
-                Thread.CurrentThread.CurrentCulture = (CultureInfo)oldCulture.Clone();
-                Thread.CurrentThread.CurrentCulture.NumberFormat.NegativeSign = "~";
-                Thread.CurrentThread.CurrentCulture.NumberFormat.NumberDecimalSeparator = ",";
+                CultureInfo.CurrentCulture = (CultureInfo)oldCulture.Clone();
+                CultureInfo.CurrentCulture.NumberFormat.NegativeSign = "~";
+                CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator = ",";
 
                 // If the exponent ("-1") is parsed using the current culture, then
                 // parsing will raise a FormatException because the current culture
@@ -2603,7 +2603,7 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests
             }
             finally
             {
-                Thread.CurrentThread.CurrentCulture = oldCulture;
+                CultureInfo.CurrentCulture = oldCulture;
             }
         }
 

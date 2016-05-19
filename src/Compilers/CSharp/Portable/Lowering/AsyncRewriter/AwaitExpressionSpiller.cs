@@ -8,6 +8,7 @@ using System.Linq;
 using Microsoft.CodeAnalysis.Collections;
 using Microsoft.CodeAnalysis.CSharp.Symbols;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Semantics;
 using Roslyn.Utilities;
 
 namespace Microsoft.CodeAnalysis.CSharp
@@ -53,6 +54,18 @@ namespace Microsoft.CodeAnalysis.CSharp
                 {
                     return _locals != null;
                 }
+            }
+
+            protected override OperationKind ExpressionKind => OperationKind.None;
+
+            public override void Accept(OperationVisitor visitor)
+            {
+                throw ExceptionUtilities.Unreachable;
+            }
+
+            public override TResult Accept<TArgument, TResult>(OperationVisitor<TArgument, TResult> visitor, TArgument argument)
+            {
+                throw ExceptionUtilities.Unreachable;
             }
 
             public ImmutableArray<LocalSymbol> GetLocals()
@@ -495,9 +508,10 @@ namespace Microsoft.CodeAnalysis.CSharp
             EnterStatement(node);
 
             BoundSpillSequenceBuilder builder = null;
+            var preambleOpt = (BoundStatement)this.Visit(node.LoweredPreambleOpt);
             var boundExpression = VisitExpression(ref builder, node.BoundExpression);
             var switchSections = this.VisitList(node.SwitchSections);
-            return UpdateStatement(builder, node.Update(boundExpression, node.ConstantTargetOpt, node.InnerLocals, switchSections, node.BreakLabel, node.StringEquality), substituteTemps: true);
+            return UpdateStatement(builder, node.Update(preambleOpt, boundExpression, node.ConstantTargetOpt, node.InnerLocals, switchSections, node.BreakLabel, node.StringEquality), substituteTemps: true);
         }
 
         public override BoundNode VisitThrowStatement(BoundThrowStatement node)

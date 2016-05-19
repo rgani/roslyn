@@ -3297,6 +3297,15 @@ Namespace Microsoft.CodeAnalysis.VisualBasic
         End Property
         
         '''<summary>
+        '''  Looks up a localized string similar to Cannot update &apos;{0}&apos;; attribute &apos;{1}&apos; is missing..
+        '''</summary>
+        Friend ReadOnly Property ERR_EncUpdateFailedMissingAttribute() As String
+            Get
+                Return ResourceManager.GetString("ERR_EncUpdateFailedMissingAttribute", resourceCulture)
+            End Get
+        End Property
+        
+        '''<summary>
         '''  Looks up a localized string similar to &apos;End Class&apos; must be preceded by a matching &apos;Class&apos;..
         '''</summary>
         Friend ReadOnly Property ERR_EndClassNoClass() As String
@@ -3783,7 +3792,7 @@ Namespace Microsoft.CodeAnalysis.VisualBasic
         End Property
         
         '''<summary>
-        '''  Looks up a localized string similar to &apos;If&apos;, &apos;ElseIf&apos;, &apos;Else&apos;, &apos;Const&apos;, &apos;Region&apos;, &apos;ExternalSource&apos;, &apos;ExternalChecksum&apos;, &apos;Enable&apos;, &apos;Disable&apos;, or &apos;End&apos; expected..
+        '''  Looks up a localized string similar to &apos;If&apos;, &apos;ElseIf&apos;, &apos;Else&apos;, &apos;Const&apos;, &apos;Region&apos;, &apos;ExternalSource&apos;, &apos;ExternalChecksum&apos;, &apos;Enable&apos;, &apos;Disable&apos;, &apos;End&apos; or &apos;R&apos; expected..
         '''</summary>
         Friend ReadOnly Property ERR_ExpectedConditionalDirective() As String
             Get
@@ -9010,6 +9019,15 @@ Namespace Microsoft.CodeAnalysis.VisualBasic
         End Property
         
         '''<summary>
+        '''  Looks up a localized string similar to An error occurred while writing the output file: {0}.
+        '''</summary>
+        Friend ReadOnly Property ERR_PeWritingFailure() As String
+            Get
+                Return ResourceManager.GetString("ERR_PeWritingFailure", resourceCulture)
+            End Get
+        End Property
+        
+        '''<summary>
         '''  Looks up a localized string similar to Cannot embed interop types from assembly &apos;{0}&apos; because it is missing the &apos;{1}&apos; attribute..
         '''</summary>
         Friend ReadOnly Property ERR_PIAHasNoAssemblyGuid1() As String
@@ -9141,6 +9159,15 @@ Namespace Microsoft.CodeAnalysis.VisualBasic
         Friend ReadOnly Property ERR_PublicKeyFileFailure() As String
             Get
                 Return ResourceManager.GetString("ERR_PublicKeyFileFailure", resourceCulture)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Looks up a localized string similar to Public sign was specified and requires a public key, but no public key was specified.
+        '''</summary>
+        Friend ReadOnly Property ERR_PublicSignNoKey() As String
+            Get
+                Return ResourceManager.GetString("ERR_PublicSignNoKey", resourceCulture)
             End Get
         End Property
         
@@ -10241,6 +10268,15 @@ Namespace Microsoft.CodeAnalysis.VisualBasic
         Friend ReadOnly Property ERR_TooManyIndices() As String
             Get
                 Return ResourceManager.GetString("ERR_TooManyIndices", resourceCulture)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Looks up a localized string similar to Combined length of user strings used by the program exceeds allowed limit. Try to decrease use of string or XML literals..
+        '''</summary>
+        Friend ReadOnly Property ERR_TooManyUserStrings() As String
+            Get
+                Return ResourceManager.GetString("ERR_TooManyUserStrings", resourceCulture)
             End Get
         End Property
         
@@ -12141,6 +12177,15 @@ Namespace Microsoft.CodeAnalysis.VisualBasic
         Friend ReadOnly Property SyntaxTreeAlreadyPresent() As String
             Get
                 Return ResourceManager.GetString("SyntaxTreeAlreadyPresent", resourceCulture)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Looks up a localized string similar to Syntax tree should be created from a submission..
+        '''</summary>
+        Friend ReadOnly Property SyntaxTreeIsNotASubmission() As String
+            Get
+                Return ResourceManager.GetString("SyntaxTreeIsNotASubmission", resourceCulture)
             End Get
         End Property
         

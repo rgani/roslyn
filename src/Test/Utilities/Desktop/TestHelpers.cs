@@ -3,13 +3,16 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Test.Utilities;
+using Microsoft.Win32;
 
 namespace Roslyn.Test.Utilities
 {
@@ -123,5 +126,44 @@ public class TestAnalyzer : DiagnosticAnalyzer
 
             return dir.CreateFile(assemblyName + ".dll").WriteAllBytes(analyzerCompilation.EmitToArray());
         }
+
+        /// <summary>
+        /// <see cref="System.Xml.Linq.XComment.Value"/> is serialized with "--" replaced by "- -"
+        /// </summary>
+        public static string AsXmlCommentText(string text)
+        {
+            var builder = new StringBuilder();
+            for (int i = 0; i < text.Length; i++)
+            {
+                var c = text[i];
+                if ((c == '-') && (i > 0) && (text[i - 1] == '-'))
+                {
+                    builder.Append(' ');
+                }
+                builder.Append(c);
+            }
+            var result = builder.ToString();
+            Debug.Assert(!result.Contains("--"));
+            return result;
+        }
+
+        public static string GetMSBuildDirectory()
+        {
+            var vsVersion = Environment.GetEnvironmentVariable("VisualStudioVersion") ?? "14.0";
+            using (var key = Registry.LocalMachine.OpenSubKey($@"SOFTWARE\Microsoft\MSBuild\ToolsVersions\{vsVersion}", false))
+            {
+                if (key != null)
+                {
+                    var toolsPath = key.GetValue("MSBuildToolsPath");
+                    if (toolsPath != null)
+                    {
+                        return toolsPath.ToString();
+                    }
+                }
+            }
+
+            return null;
+        }
+
     }
 }

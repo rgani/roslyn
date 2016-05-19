@@ -13,6 +13,10 @@ Namespace Microsoft.VisualStudio.LanguageServices.VisualBasic.Options
 
             InitializeComponent()
 
+            BindToOption(PlaceSystemNamespaceFirst, OrganizerOptions.PlaceSystemNamespaceFirst, LanguageNames.VisualBasic)
+            BindToOption(SuggestForTypesInReferenceAssemblies, AddImportOptions.SuggestForTypesInReferenceAssemblies, LanguageNames.VisualBasic)
+            BindToOption(SuggestForTypesInNuGetPackages, AddImportOptions.SuggestForTypesInNuGetPackages, LanguageNames.VisualBasic)
+
             BindToOption(EnableEndConstruct, FeatureOnOffOptions.EndConstruct, LanguageNames.VisualBasic)
             BindToOption(EnableOutlining, FeatureOnOffOptions.Outlining, LanguageNames.VisualBasic)
             BindToOption(EnableLineCommit, FeatureOnOffOptions.PrettyListing, LanguageNames.VisualBasic)
@@ -25,7 +29,7 @@ Namespace Microsoft.VisualStudio.LanguageServices.VisualBasic.Options
             BindToOption(NavigateToObjectBrowser, VisualStudioNavigationOptions.NavigateToObjectBrowser, LanguageNames.VisualBasic)
             BindToOption(DontPutOutOrRefOnStruct, ExtractMethodOptions.DontPutOutOrRefOnStruct, LanguageNames.VisualBasic)
             BindToOption(AllowMovingDeclaration, ExtractMethodOptions.AllowMovingDeclaration, LanguageNames.VisualBasic)
-            BindToOption(ClosedFileDiagnostics, ServiceFeatureOnOffOptions.ClosedFileDiagnostic, LanguageNames.VisualBasic)
+            BindToFullSolutionAnalysisOption(ClosedFileDiagnostics, LanguageNames.VisualBasic)
         End Sub
     End Class
 End Namespace

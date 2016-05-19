@@ -32,17 +32,28 @@ namespace Microsoft.VisualStudio.LanguageServices.Implementation.Options
 
             var checkBoxStyle = new Style(typeof(CheckBox));
             checkBoxStyle.Setters.Add(new Setter(CheckBox.MarginProperty, new Thickness() { Bottom = 7 }));
-            groupBoxStyle.Setters.Add(new Setter(GroupBox.ForegroundProperty, new DynamicResourceExtension(SystemColors.WindowTextBrushKey)));
+            checkBoxStyle.Setters.Add(new Setter(CheckBox.ForegroundProperty, new DynamicResourceExtension(SystemColors.WindowTextBrushKey)));
             Resources.Add(typeof(CheckBox), checkBoxStyle);
+
+            var textBoxStyle = new Style(typeof(TextBox));
+            textBoxStyle.Setters.Add(new Setter(TextBox.MarginProperty, new Thickness() { Left = 7, Right = 7 }));
+            textBoxStyle.Setters.Add(new Setter(TextBox.ForegroundProperty, new DynamicResourceExtension(SystemColors.WindowTextBrushKey)));
+            Resources.Add(typeof(TextBox), textBoxStyle);
+        }
+
+        protected void AddBinding(BindingExpressionBase bindingExpression)
+        {
+            _bindingExpressions.Add(bindingExpression);
         }
 
         protected void BindToOption(CheckBox checkbox, Option<bool> optionKey)
         {
-            Binding binding = new Binding();
-
-            binding.Source = new OptionBinding<bool>(OptionService, optionKey);
-            binding.Path = new PropertyPath("Value");
-            binding.UpdateSourceTrigger = UpdateSourceTrigger.Explicit;
+            var binding = new Binding()
+            {
+                Source = new OptionBinding<bool>(OptionService, optionKey),
+                Path = new PropertyPath("Value"),
+                UpdateSourceTrigger = UpdateSourceTrigger.Explicit
+            };
 
             var bindingExpression = checkbox.SetBinding(CheckBox.IsCheckedProperty, binding);
             _bindingExpressions.Add(bindingExpression);
@@ -50,11 +61,12 @@ namespace Microsoft.VisualStudio.LanguageServices.Implementation.Options
 
         protected void BindToOption(CheckBox checkbox, PerLanguageOption<bool> optionKey, string languageName)
         {
-            Binding binding = new Binding();
-
-            binding.Source = new PerLanguageOptionBinding<bool>(OptionService, optionKey, languageName);
-            binding.Path = new PropertyPath("Value");
-            binding.UpdateSourceTrigger = UpdateSourceTrigger.Explicit;
+            var binding = new Binding()
+            {
+                Source = new PerLanguageOptionBinding<bool>(OptionService, optionKey, languageName),
+                Path = new PropertyPath("Value"),
+                UpdateSourceTrigger = UpdateSourceTrigger.Explicit
+            };
 
             var bindingExpression = checkbox.SetBinding(CheckBox.IsCheckedProperty, binding);
             _bindingExpressions.Add(bindingExpression);
@@ -62,11 +74,12 @@ namespace Microsoft.VisualStudio.LanguageServices.Implementation.Options
 
         protected void BindToOption(TextBox textBox, Option<int> optionKey)
         {
-            Binding binding = new Binding();
-
-            binding.Source = new OptionBinding<int>(OptionService, optionKey);
-            binding.Path = new PropertyPath("Value");
-            binding.UpdateSourceTrigger = UpdateSourceTrigger.Explicit;
+            var binding = new Binding()
+            {
+                Source = new OptionBinding<int>(OptionService, optionKey),
+                Path = new PropertyPath("Value"),
+                UpdateSourceTrigger = UpdateSourceTrigger.Explicit
+            };
 
             var bindingExpression = textBox.SetBinding(TextBox.TextProperty, binding);
             _bindingExpressions.Add(bindingExpression);
@@ -74,13 +87,27 @@ namespace Microsoft.VisualStudio.LanguageServices.Implementation.Options
 
         protected void BindToOption(TextBox textBox, PerLanguageOption<int> optionKey, string languageName)
         {
-            Binding binding = new Binding();
-
-            binding.Source = new PerLanguageOptionBinding<int>(OptionService, optionKey, languageName);
-            binding.Path = new PropertyPath("Value");
-            binding.UpdateSourceTrigger = UpdateSourceTrigger.Explicit;
+            var binding = new Binding()
+            {
+                Source = new PerLanguageOptionBinding<int>(OptionService, optionKey, languageName),
+                Path = new PropertyPath("Value"),
+                UpdateSourceTrigger = UpdateSourceTrigger.Explicit
+            };
 
             var bindingExpression = textBox.SetBinding(TextBox.TextProperty, binding);
+            _bindingExpressions.Add(bindingExpression);
+        }
+
+        protected void BindToFullSolutionAnalysisOption(CheckBox checkbox, string languageName)
+        {
+            Binding binding = new Binding()
+            {
+                Source = new FullSolutionAnalysisOptionBinding(OptionService, languageName),
+                Path = new PropertyPath("Value"),
+                UpdateSourceTrigger = UpdateSourceTrigger.Explicit
+            };
+
+            var bindingExpression = checkbox.SetBinding(CheckBox.IsCheckedProperty, binding);
             _bindingExpressions.Add(bindingExpression);
         }
 
@@ -96,6 +123,11 @@ namespace Microsoft.VisualStudio.LanguageServices.Implementation.Options
         {
             foreach (var bindingExpression in _bindingExpressions)
             {
+                if (!bindingExpression.IsDirty)
+                {
+                    continue;
+                }
+
                 bindingExpression.UpdateSource();
             }
         }

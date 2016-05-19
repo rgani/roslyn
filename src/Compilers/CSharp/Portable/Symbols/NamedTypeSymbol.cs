@@ -364,21 +364,26 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         {
             if (this.MightContainExtensionMethods)
             {
-                var members = nameOpt == null
-                    ? this.GetMembersUnordered()
-                    : this.GetSimpleNonTypeMembers(nameOpt);
+                DoGetExtensionMethods(methods, nameOpt, arity, options);
+            }
+        }
 
-                foreach (var member in members)
+        internal void DoGetExtensionMethods(ArrayBuilder<MethodSymbol> methods, string nameOpt, int arity, LookupOptions options)
+        {
+            var members = nameOpt == null
+                ? this.GetMembersUnordered()
+                : this.GetSimpleNonTypeMembers(nameOpt);
+
+            foreach (var member in members)
+            {
+                if (member.Kind == SymbolKind.Method)
                 {
-                    if (member.Kind == SymbolKind.Method)
+                    var method = (MethodSymbol)member;
+                    if (method.IsExtensionMethod &&
+                        ((options & LookupOptions.AllMethodsOnArityZero) != 0 || arity == method.Arity))
                     {
-                        var method = (MethodSymbol)member;
-                        if (method.IsExtensionMethod &&
-                            ((options & LookupOptions.AllMethodsOnArityZero) != 0 || arity == method.Arity))
-                        {
-                            Debug.Assert(method.MethodKind != MethodKind.ReducedExtension);
-                            methods.Add(method);
-                        }
+                        Debug.Assert(method.MethodKind != MethodKind.ReducedExtension);
+                        methods.Add(method);
                     }
                 }
             }
@@ -557,6 +562,32 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         public abstract override ImmutableArray<NamedTypeSymbol> GetTypeMembers(string name, int arity);
 
         /// <summary>
+        /// Get all instance field and event members.
+        /// </summary>
+        /// <remarks>
+        /// For source symbols may be called while calculating
+        /// <see cref="NamespaceOrTypeSymbol.GetMembersUnordered"/>.
+        /// </remarks>
+        internal virtual IEnumerable<Symbol> GetInstanceFieldsAndEvents()
+        {
+            return GetMembersUnordered().Where(IsInstanceFieldOrEvent);
+        }
+
+        protected static Func<Symbol, bool> IsInstanceFieldOrEvent = symbol =>
+        {
+            if (!symbol.IsStatic)
+            {
+                switch (symbol.Kind)
+                {
+                    case SymbolKind.Field:
+                    case SymbolKind.Event:
+                        return true;
+                }
+            }
+            return false;
+        };
+
+        /// <summary>
         /// Get this accessibility that was declared on this symbol. For symbols that do not have
         /// accessibility declared on them, returns NotApplicable.
         /// </summary>
@@ -652,13 +683,17 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             var thisOriginalDefinition = this.OriginalDefinition;
             var otherOriginalDefinition = other.OriginalDefinition;
 
+            if (((object)this == (object)thisOriginalDefinition || (object)other == (object)otherOriginalDefinition) &&
+                !(ignoreCustomModifiersAndArraySizesAndLowerBounds && (this.HasTypeArgumentsCustomModifiers || other.HasTypeArgumentsCustomModifiers)))
+            {
+                return false;
+            }
+
             // CONSIDER: original definitions are not unique for missing metadata type
             // symbols.  Therefore this code may not behave correctly if 'this' is List<int>
             // where List`1 is a missing metadata type symbol, and other is similarly List<int>
             // but for a reference-distinct List`1.
-            if (((object)this == (object)thisOriginalDefinition) ||
-                ((object)other == (object)otherOriginalDefinition) ||
-                (thisOriginalDefinition != otherOriginalDefinition))
+            if (thisOriginalDefinition != otherOriginalDefinition)
             {
                 return false;
             }
@@ -691,7 +726,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 return true;
             }
 
-            if (thisIsNotConstructed || otherIsNotConstructed || this.IsUnboundGenericType != other.IsUnboundGenericType)
+            if (((thisIsNotConstructed || otherIsNotConstructed) &&
+                 !(ignoreCustomModifiersAndArraySizesAndLowerBounds && (this.HasTypeArgumentsCustomModifiers || other.HasTypeArgumentsCustomModifiers))) ||
+                this.IsUnboundGenericType != other.IsUnboundGenericType)
             {
                 return false;
             }
@@ -702,7 +739,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             {
                 return false;
             }
-             
+
             var typeArguments = this.TypeArgumentsNoUseSiteDiagnostics;
             var otherTypeArguments = other.TypeArgumentsNoUseSiteDiagnostics;
             int count = typeArguments.Length;

@@ -74,18 +74,19 @@
     <DebugSymbols>true</DebugSymbols>
     <DefineDebug>true</DefineDebug>
     <DefineTrace>true</DefineTrace>
-    <DebugType>full</DebugType>
     <DocumentationFile>Microsoft.CodeAnalysis.VisualBasic.EditorFeatures.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <DefineTrace>true</DefineTrace>
     <Optimize>true</Optimize>
-    <DebugType>pdbonly</DebugType>
     <DocumentationFile>Microsoft.CodeAnalysis.VisualBasic.EditorFeatures.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Interactive\FileSystem\ReferenceDirectiveCompletionProvider.vb" />
+    <Compile Include="Interactive\CompletionProviders\VisualBasicReplCommandCompletionProvider.vb" />
     <Compile Include="Interactive\VisualBasicInteractiveEvaluator.vb" />
     <Compile Include="Interactive\VisualBasicReplServiceProvider.vb" />
+    <Compile Include="Interactive\VisualBasicSendToInteractiveSubmissionProvider.vb" />
     <Compile Include="VBInteractiveEditorResources.Designer.vb">
       <DependentUpon>VBInteractiveEditorResources.resx</DependentUpon>
       <AutoGen>True</AutoGen>
@@ -93,27 +94,6 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.VisualStudio.CoreUtility, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Language.Intellisense, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Language.StandardClassification, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Text.Data, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Text.Logic, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Text.UI, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Text.UI.Wpf, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>false</Private>
-    </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Xml.Linq" />

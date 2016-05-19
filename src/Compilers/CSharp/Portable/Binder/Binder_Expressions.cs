@@ -375,7 +375,8 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private void VerifyUnchecked(ExpressionSyntax node, DiagnosticBag diagnostics, BoundExpression expr)
         {
-            if (!expr.HasAnyErrors)
+            var isInsideNameof = this.EnclosingNameofArgument != null;
+            if (!expr.HasAnyErrors && !isInsideNameof)
             {
                 TypeSymbol exprType = expr.Type;
                 if ((object)exprType != null && exprType.IsUnsafe())
@@ -1192,8 +1193,9 @@ namespace Microsoft.CodeAnalysis.CSharp
                                 // Not expecting parameter from constructed method.
                                 Debug.Assert(!parameter.ContainingSymbol.Equals(containingMethod));
 
+                                var isInsideNameof = this.EnclosingNameofArgument != null;
                                 // Captured in a lambda.
-                                if (containingMethod.MethodKind == MethodKind.AnonymousFunction) // false in EE evaluation method
+                                if (containingMethod.MethodKind == MethodKind.AnonymousFunction && !isInsideNameof) // false in EE evaluation method
                                 {
                                     Error(diagnostics, ErrorCode.ERR_AnonDelegateCantUse, node, parameter.Name);
                                 }
@@ -1758,6 +1760,32 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
         }
 
+        private bool RefMustBeObeyed(bool isDelegateCreation, ArgumentSyntax argumentSyntax)
+        {
+            if (Compilation.FeatureStrictEnabled || !isDelegateCreation)
+            {
+                return true;
+            }
+
+            switch (argumentSyntax.Expression.Kind())
+            {
+                // The next 3 cases should never be allowed as they cannot be ref/out. Assuming a bug in legacy compiler.
+                case SyntaxKind.ParenthesizedLambdaExpression:
+                case SyntaxKind.SimpleLambdaExpression:
+                case SyntaxKind.AnonymousMethodExpression:
+                case SyntaxKind.InvocationExpression:
+                case SyntaxKind.ObjectCreationExpression:
+                case SyntaxKind.ParenthesizedExpression: // this is never allowed in legacy compiler
+                    // A property/indexer is also invalid as it cannot be ref/out, but cannot be checked here. Assuming a bug in legacy compiler.
+                    return true;
+                default:
+                    // The only ones that concern us here for compat is: locals, params, fields
+                    // BindArgumentAndName correctly rejects all other cases, except for properties and indexers.
+                    // They are handled after BindArgumentAndName returns and the binding can be checked.
+                    return false;
+            }
+        }
+
         private bool BindArgumentAndName(
             AnalyzedArguments result,
             DiagnosticBag diagnostics,
@@ -1766,11 +1794,11 @@ namespace Microsoft.CodeAnalysis.CSharp
             bool allowArglist,
             bool isDelegateCreation = false)
         {
+            RefKind origRefKind = argumentSyntax.RefOrOutKeyword.Kind().GetRefKind();
             // The old native compiler ignores ref/out in a delegate creation expression.
             // For compatibility we implement the same bug except in strict mode.
-            RefKind refKind = (!isDelegateCreation || Compilation.FeatureStrictEnabled)
-                ? argumentSyntax.RefOrOutKeyword.Kind().GetRefKind()
-                : RefKind.None;
+            // Note: Some others should still be rejected when ref/out present. See RefMustBeObeyed.
+            RefKind refKind = origRefKind == RefKind.None || RefMustBeObeyed(isDelegateCreation, argumentSyntax) ? origRefKind : RefKind.None;
 
             hadError |= BindArgumentAndName(
                 result,
@@ -1781,6 +1809,18 @@ namespace Microsoft.CodeAnalysis.CSharp
                 argumentSyntax.NameColon,
                 refKind,
                 allowArglist);
+
+            // check for ref/out property/indexer, only needed for 1 parameter version
+            if (!hadError && isDelegateCreation && origRefKind != RefKind.None && result.Arguments.Count == 1)
+            {
+                var arg = result.Argument(0);
+                switch (arg.Kind)
+                {
+                    case BoundKind.PropertyAccess:
+                    case BoundKind.IndexerAccess:
+                        return CheckIsVariable(argumentSyntax, arg, BindValueKind.OutParameter, false, diagnostics);
+                }
+            }
 
             return hadError;
         }
@@ -2733,7 +2773,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                         typeArguments: ImmutableArray<TypeSymbol>.Empty,
                         analyzedArguments: analyzedArguments,
                         invokedAsExtensionMethod: false,
-                        isDelegate: false);
+                        isDelegate: false,
+                        extensionMethodsOfSameViabilityAreAvailable: false);
                     result.WasCompilerGenerated = initializerArgumentListOpt == null;
                     return result;
                 }
@@ -4469,6 +4510,12 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if ((object)leftType != null && leftType.IsDynamic())
             {
+                // There are some sources of a `dynamic` typed value that can be known before runtime
+                // to be invalid. For example, accessing a set-only property whose type is dynamic:
+                //   dynamic Foo { set; }
+                // If Foo itself is a dynamic thing (e.g. in `x.Foo.Bar`, `x` is dynamic, and we're
+                // currently checking Bar), then CheckValue will do nothing.
+                boundLeft = CheckValue(boundLeft, BindValueKind.RValue, diagnostics);
                 return BindDynamicMemberAccess(node, boundLeft, right, invoked, indexed, diagnostics);
             }
 
@@ -5135,7 +5182,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                 OverloadResolution.MethodInvocationOverloadResolution(methodGroup.Methods, methodGroup.TypeArguments, actualArguments, overloadResolutionResult, ref useSiteDiagnostics, isMethodGroupConversion, allowRefOmittedArguments);
                 diagnostics.Add(expression, useSiteDiagnostics);
                 var sealedDiagnostics = diagnostics.ToReadOnlyAndFree();
-                var result = new MethodGroupResolution(methodGroup, null, overloadResolutionResult, actualArguments, methodGroup.ResultKind, sealedDiagnostics);
+                var result = new MethodGroupResolution(methodGroup, null, overloadResolutionResult, actualArguments, methodGroup.ResultKind, sealedDiagnostics,
+                                                       extensionMethodsOfSameViabilityAreAvailable: false);
 
                 // If the search in the current scope resulted in any applicable method (regardless of whether a best 
                 // applicable method could be determined) then our search is complete. Otherwise, store aside the
@@ -5243,8 +5291,9 @@ namespace Microsoft.CodeAnalysis.CSharp
                 if (!hasError)
                 {
                     var isFixedStatementExpression = SyntaxFacts.IsFixedStatementExpression(node);
+                    var isInsideNameof = this.EnclosingNameofArgument != null;
                     Symbol accessedLocalOrParameterOpt;
-                    if (IsNonMoveableVariable(receiver, out accessedLocalOrParameterOpt) == isFixedStatementExpression)
+                    if (IsNonMoveableVariable(receiver, out accessedLocalOrParameterOpt) == isFixedStatementExpression && !isInsideNameof)
                     {
                         Error(diagnostics, isFixedStatementExpression ? ErrorCode.ERR_FixedNotNeeded : ErrorCode.ERR_FixedBufferNotFixed, node);
                         hasErrors = true;
@@ -6129,7 +6178,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                 var diagnostics = DiagnosticBag.GetInstance();
                 diagnostics.AddRange(methodResolution.Diagnostics); // Could still have use site warnings.
                 BindMemberAccessReportError(node, diagnostics);
-                return new MethodGroupResolution(methodResolution.MethodGroup, methodResolution.OtherSymbol, methodResolution.OverloadResolutionResult, methodResolution.AnalyzedArguments, methodResolution.ResultKind, diagnostics.ToReadOnlyAndFree());
+                return new MethodGroupResolution(methodResolution.MethodGroup, methodResolution.OtherSymbol, methodResolution.OverloadResolutionResult, methodResolution.AnalyzedArguments, methodResolution.ResultKind, diagnostics.ToReadOnlyAndFree(),
+                                                 methodResolution.ExtensionMethodsOfSameViabilityAreAvailable);
             }
             return methodResolution;
         }
@@ -6158,6 +6208,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             var extensionMethodResolution = BindExtensionMethod(expression, methodName, analyzedArguments, methodGroup.ReceiverOpt, methodGroup.TypeArgumentsOpt, isMethodGroupConversion);
 
             bool preferExtensionMethodResolution = false;
+            bool extensionMethodsOfSameViabilityAreAvailable = false;
+
             if (extensionMethodResolution.HasAnyApplicableMethod)
             {
                 preferExtensionMethodResolution = true;
@@ -6182,8 +6234,12 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 LookupResultKind methodResultKind = methodResolution.ResultKind;
                 LookupResultKind extensionMethodResultKind = extensionMethodResolution.ResultKind;
-                if (methodResultKind != extensionMethodResultKind &&
-                    methodResultKind == extensionMethodResultKind.WorseResultKind(methodResultKind))
+                if (methodResultKind == extensionMethodResultKind)
+                {
+                    // This information allows us to preserve more useful information for SemanticModel.
+                    extensionMethodsOfSameViabilityAreAvailable = true;
+                }
+                else if (methodResultKind == extensionMethodResultKind.WorseResultKind(methodResultKind))
                 {
                     preferExtensionMethodResolution = true;
                 }
@@ -6197,6 +6253,18 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             extensionMethodResolution.Free();
+
+            if (extensionMethodsOfSameViabilityAreAvailable)
+            {
+                return new MethodGroupResolution(methodResolution.MethodGroup,
+                                                 methodResolution.OtherSymbol,
+                                                 methodResolution.OverloadResolutionResult,
+                                                 methodResolution.AnalyzedArguments,
+                                                 methodResolution.ResultKind,
+                                                 methodResolution.Diagnostics,
+                                                 extensionMethodsOfSameViabilityAreAvailable: true);
+            }
+
             return methodResolution;
         }
 
@@ -6255,7 +6323,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                     methodGroup.Methods, methodGroup.TypeArguments, analyzedArguments,
                     result, ref useSiteDiagnostics, isMethodGroupConversion, allowRefOmittedArguments,
                     inferWithDynamic: inferWithDynamic, allowUnexpandedForm: allowUnexpandedForm);
-                return new MethodGroupResolution(methodGroup, null, result, analyzedArguments, methodGroup.ResultKind, sealedDiagnostics);
+                return new MethodGroupResolution(methodGroup, null, result, analyzedArguments, methodGroup.ResultKind, sealedDiagnostics,
+                                                 extensionMethodsOfSameViabilityAreAvailable: false);
             }
         }
 

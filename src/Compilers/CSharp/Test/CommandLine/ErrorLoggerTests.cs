@@ -46,7 +46,7 @@ class C
 
             var expectedHeader = GetExpectedErrorLogHeader(actualOutput, cmd);
             var expectedIssues = @"
-      ""issues"": [
+      ""results"": [
       ]
     }
   ]
@@ -85,54 +85,65 @@ public class C
 
             var expectedHeader = GetExpectedErrorLogHeader(actualOutput, cmd);
             var expectedIssues = string.Format(@"
-      ""issues"": [
+      ""results"": [
         {{
           ""ruleId"": ""CS0169"",
+          ""level"": ""warning"",
+          ""message"": ""The field 'C.x' is never used"",
           ""locations"": [
             {{
-              ""analysisTarget"": [
-                {{
-                  ""uri"": ""{0}"",
-                  ""region"": {{
-                    ""startLine"": 4,
-                    ""startColumn"": 17,
-                    ""endLine"": 4,
-                    ""endColumn"": 18
-                  }}
+              ""resultFile"": {{
+                ""uri"": ""{0}"",
+                ""region"": {{
+                  ""startLine"": 4,
+                  ""startColumn"": 17,
+                  ""endLine"": 4,
+                  ""endColumn"": 18
                 }}
-              ]
+              }}
             }}
           ],
-          ""fullMessage"": ""The field 'C.x' is never used"",
           ""properties"": {{
-            ""severity"": ""Warning"",
-            ""warningLevel"": ""3"",
-            ""defaultSeverity"": ""Warning"",
-            ""title"": ""Field is never used"",
-            ""category"": ""Compiler"",
-            ""isEnabledByDefault"": ""True"",
-            ""isSuppressedInSource"": ""False"",
-            ""customTags"": ""Compiler;Telemetry""
+            ""warningLevel"": 3
           }}
         }},
         {{
           ""ruleId"": ""CS5001"",
-          ""locations"": [
-          ],
-          ""fullMessage"": ""Program does not contain a static 'Main' method suitable for an entry point"",
+          ""level"": ""error"",
+          ""message"": ""Program does not contain a static 'Main' method suitable for an entry point""
+        }}
+      ],
+      ""rules"": {{
+        ""CS0169"": {{
+          ""id"": ""CS0169"",
+          ""shortDescription"": ""Field is never used"",
+          ""defaultLevel"": ""warning"",
           ""properties"": {{
-            ""severity"": ""Error"",
-            ""defaultSeverity"": ""Error"",
             ""category"": ""Compiler"",
-            ""isEnabledByDefault"": ""True"",
-            ""isSuppressedInSource"": ""False"",
-            ""customTags"": ""Compiler;Telemetry;NotConfigurable""
+            ""isEnabledByDefault"": true,
+            ""tags"": [
+              ""Compiler"",
+              ""Telemetry""
+            ]
+          }}
+        }},
+        ""CS5001"": {{
+          ""id"": ""CS5001"",
+          ""defaultLevel"": ""error"",
+          ""properties"": {{
+            ""category"": ""Compiler"",
+            ""isEnabledByDefault"": true,
+            ""tags"": [
+              ""Compiler"",
+              ""Telemetry"",
+              ""NotConfigurable""
+            ]
           }}
         }}
-      ]
+      }}
     }}
   ]
-}}", AnalyzerForErrorLogTest.GetEscapedUriForPath(sourceFile));
+}}", AnalyzerForErrorLogTest.GetUriForPath(sourceFile));
 
             var expectedText = expectedHeader + expectedIssues;
             Assert.Equal(expectedText, actualOutput);
@@ -171,54 +182,68 @@ public class C
 
             var expectedHeader = GetExpectedErrorLogHeader(actualOutput, cmd);
             var expectedIssues = string.Format(@"
-      ""issues"": [
+      ""results"": [
         {{
           ""ruleId"": ""CS0169"",
+          ""level"": ""warning"",
+          ""message"": ""The field 'C.x' is never used"",
+          ""suppressionStates"": [
+            ""suppressedInSource""
+          ],
           ""locations"": [
             {{
-              ""analysisTarget"": [
-                {{
-                  ""uri"": ""{0}"",
-                  ""region"": {{
-                    ""startLine"": 5,
-                    ""startColumn"": 17,
-                    ""endLine"": 5,
-                    ""endColumn"": 18
-                  }}
+              ""resultFile"": {{
+                ""uri"": ""{0}"",
+                ""region"": {{
+                  ""startLine"": 5,
+                  ""startColumn"": 17,
+                  ""endLine"": 5,
+                  ""endColumn"": 18
                 }}
-              ]
+              }}
             }}
           ],
-          ""fullMessage"": ""The field 'C.x' is never used"",
           ""properties"": {{
-            ""severity"": ""Warning"",
-            ""warningLevel"": ""3"",
-            ""defaultSeverity"": ""Warning"",
-            ""title"": ""Field is never used"",
-            ""category"": ""Compiler"",
-            ""isEnabledByDefault"": ""True"",
-            ""isSuppressedInSource"": ""True"",
-            ""customTags"": ""Compiler;Telemetry""
+            ""warningLevel"": 3
           }}
         }},
         {{
           ""ruleId"": ""CS5001"",
-          ""locations"": [
-          ],
-          ""fullMessage"": ""Program does not contain a static 'Main' method suitable for an entry point"",
+          ""level"": ""error"",
+          ""message"": ""Program does not contain a static 'Main' method suitable for an entry point""
+        }}
+      ],
+      ""rules"": {{
+        ""CS0169"": {{
+          ""id"": ""CS0169"",
+          ""shortDescription"": ""Field is never used"",
+          ""defaultLevel"": ""warning"",
           ""properties"": {{
-            ""severity"": ""Error"",
-            ""defaultSeverity"": ""Error"",
             ""category"": ""Compiler"",
-            ""isEnabledByDefault"": ""True"",
-            ""isSuppressedInSource"": ""False"",
-            ""customTags"": ""Compiler;Telemetry;NotConfigurable""
+            ""isEnabledByDefault"": true,
+            ""tags"": [
+              ""Compiler"",
+              ""Telemetry""
+            ]
+          }}
+        }},
+        ""CS5001"": {{
+          ""id"": ""CS5001"",
+          ""defaultLevel"": ""error"",
+          ""properties"": {{
+            ""category"": ""Compiler"",
+            ""isEnabledByDefault"": true,
+            ""tags"": [
+              ""Compiler"",
+              ""Telemetry"",
+              ""NotConfigurable""
+            ]
           }}
         }}
-      ]
+      }}
     }}
   ]
-}}", AnalyzerForErrorLogTest.GetEscapedUriForPath(sourceFile));
+}}", AnalyzerForErrorLogTest.GetUriForPath(sourceFile));
 
             var expectedText = expectedHeader + expectedIssues;
             Assert.Equal(expectedText, actualOutput);
@@ -255,7 +280,7 @@ public class C
             var actualOutput = File.ReadAllText(errorLogFile).Trim();
 
             var expectedHeader = GetExpectedErrorLogHeader(actualOutput, cmd);
-            var expectedIssues = AnalyzerForErrorLogTest.GetExpectedErrorLogIssuesText(cmd.Compilation);
+            var expectedIssues = AnalyzerForErrorLogTest.GetExpectedErrorLogResultsText(cmd.Compilation);
             var expectedText = expectedHeader + expectedIssues;
             Assert.Equal(expectedText, actualOutput);
 

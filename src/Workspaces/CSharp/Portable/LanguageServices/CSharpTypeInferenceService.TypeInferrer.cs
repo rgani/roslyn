@@ -21,7 +21,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 CancellationToken cancellationToken) : base(semanticModel, cancellationToken)
             {
             }
-            
+
             protected override bool IsUnusableType(ITypeSymbol otherSideType)
             {
                 return otherSideType.IsErrorType() &&
@@ -204,6 +204,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     (CatchFilterClauseSyntax catchFilterClause) => InferTypeInCatchFilterClause(catchFilterClause, token),
                     (CheckedExpressionSyntax checkedExpression) => InferTypes(checkedExpression),
                     (ConditionalExpressionSyntax conditionalExpression) => InferTypeInConditionalExpression(conditionalExpression, previousToken: token),
+                    (DefaultExpressionSyntax defaultExpression) => InferTypeInDefaultExpression(defaultExpression),
                     (DoStatementSyntax doStatement) => InferTypeInDoStatement(doStatement, token),
                     (EqualsValueClauseSyntax equalsValue) => InferTypeInEqualsValueClause(equalsValue, token),
                     (ExpressionStatementSyntax expressionStatement) => InferTypeInExpressionStatement(expressionStatement, token),
@@ -550,7 +551,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 // If the method has already been constructed poorly (i.e. with error types for type 
                 // arguments), then unconstruct it.
-                if (method.TypeArguments.All(t => t.Kind == SymbolKind.ErrorType))
+                if (method.TypeArguments.Any(t => t.Kind == SymbolKind.ErrorType))
                 {
                     method = method.ConstructedFrom;
                 }
@@ -628,7 +629,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         }
                         return;
                 }
-        }
+            }
 
             private IEnumerable<ITypeSymbol> InferTypeInAttributeArgument(
                 int index,
@@ -1033,6 +1034,11 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return otherTypes.IsEmpty()
                            ? InferTypes(conditional)
                            : otherTypes;
+            }
+
+            private IEnumerable<ITypeSymbol> InferTypeInDefaultExpression(DefaultExpressionSyntax defaultExpression)
+            {
+                return InferTypes(defaultExpression);
             }
 
             private IEnumerable<ITypeSymbol> InferTypeInDoStatement(DoStatementSyntax doStatement, SyntaxToken? previousToken = null)
@@ -1459,9 +1465,20 @@ namespace Microsoft.CodeAnalysis.CSharp
                     case SyntaxKind.PreIncrementExpression:
                     case SyntaxKind.UnaryPlusExpression:
                     case SyntaxKind.UnaryMinusExpression:
-                    case SyntaxKind.BitwiseNotExpression:
-                        // ++, --, +Foo(), -Foo(), ~Foo();
+                        // ++, --, +Foo(), -Foo();
                         return SpecializedCollections.SingletonEnumerable(this.Compilation.GetSpecialType(SpecialType.System_Int32));
+
+                    case SyntaxKind.BitwiseNotExpression:
+                        // ~Foo()
+                        var types = InferTypes(prefixUnaryExpression).WhereNotNull();
+                        if (!types.Any())
+                        {
+                            return SpecializedCollections.SingletonEnumerable(this.Compilation.GetSpecialType(SpecialType.System_Int32));
+                        }
+                        else
+                        {
+                            return types;
+                        }
 
                     case SyntaxKind.LogicalNotExpression:
                         // !Foo()
@@ -1565,7 +1582,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 var lambda = ancestorExpressions.FirstOrDefault(e => e.IsKind(SyntaxKind.ParenthesizedLambdaExpression, SyntaxKind.SimpleLambdaExpression));
                 if (lambda != null)
                 {
-                    types= InferTypeInLambdaExpression(lambda);
+                    types = InferTypeInLambdaExpression(lambda);
                     isAsync = lambda is ParenthesizedLambdaExpressionSyntax && ((ParenthesizedLambdaExpressionSyntax)lambda).AsyncKeyword.Kind() != SyntaxKind.None;
                     return;
                 }

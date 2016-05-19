@@ -79,20 +79,18 @@
     <Compile Include="AutomaticCompletion\Sessions\LessAndGreaterThanCompletionSession.cs" />
     <Compile Include="AutomaticCompletion\Sessions\ParenthesisCompletionSession.cs" />
     <Compile Include="AutomaticCompletion\Sessions\StringLiteralCompletionSession.cs" />
+    <Compile Include="BlockCommentEditing\BlockCommentEditingCommandHandler.cs" />
     <Compile Include="BraceMatching\AbstractCSharpBraceMatcher.cs" />
     <Compile Include="BraceMatching\LessThanGreaterThanBraceMatcher.cs" />
     <Compile Include="BraceMatching\OpenCloseBraceBraceMatcher.cs" />
     <Compile Include="BraceMatching\OpenCloseBracketBraceMatcher.cs" />
     <Compile Include="BraceMatching\OpenCloseParenBraceMatcher.cs" />
+    <Compile Include="BraceMatching\CSharpDirectiveTriviaBraceMatcher.cs" />
     <Compile Include="BraceMatching\StringLiteralBraceMatcher.cs" />
     <Compile Include="CallHierarchy\CallHierarchyCommandHandler.cs" />
     <Compile Include="ChangeSignature\ChangeSignatureCommandHandler.cs" />
     <Compile Include="Classification\CSharpEditorClassificationService.cs" />
     <Compile Include="CommentSelection\CSharpCommentUncommentService.cs" />
-    <Compile Include="Completion\CompletionProviders\OverrideCompletionProvider.cs" />
-    <Compile Include="Completion\CompletionProviders\PartialCompletionProvider.cs" />
-    <Compile Include="Completion\CompletionProviders\XmlDocCommentCompletion\XmlDocCommentCompletionItemRules.cs" />
-    <Compile Include="Completion\CompletionProviders\XmlDocCommentCompletion\XmlDocCommentCompletionProvider.cs" />
     <Compile Include="ContentType\ContentTypeDefinitions.cs" />
     <Compile Include="CSharpEditorResources.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -152,7 +150,6 @@
     <Compile Include="NavigationBar\CSharpNavigationBarItemService.cs" />
     <Compile Include="Outlining\CSharpOutliningHelpers.cs" />
     <Compile Include="Outlining\CSharpOutliningService.cs" />
-    <Compile Include="Outlining\Outliners\AbstractSyntaxNodeOutliner.cs" />
     <Compile Include="Outlining\Outliners\AccessorDeclarationOutliner.cs" />
     <Compile Include="Outlining\Outliners\AnonymousMethodExpressionOutliner.cs" />
     <Compile Include="Outlining\Outliners\CompilationUnitOutliner.cs" />
@@ -196,48 +193,12 @@
     <Compile Include="ReferenceHighlighting\ReferenceHighlightingAdditionalReferenceProvider.cs" />
     <Compile Include="RenameTracking\CSharpRenameTrackingCodeFixProvider.cs" />
     <Compile Include="RenameTracking\CSharpRenameTrackingLanguageHeuristicsService.cs" />
-    <Compile Include="SignatureHelp\AbstractCSharpSignatureHelpProvider.cs" />
-    <Compile Include="SignatureHelp\AttributeSignatureHelpProvider.cs" />
-    <Compile Include="SignatureHelp\ConstructorInitializerSignatureHelpProvider.cs" />
-    <Compile Include="SignatureHelp\ElementAccessExpressionSignatureHelpProvider.cs" />
-    <Compile Include="SignatureHelp\GenericNamePartiallyWrittenSignatureHelpProvider.cs" />
-    <Compile Include="SignatureHelp\GenericNameSignatureHelpProvider.cs" />
-    <Compile Include="SignatureHelp\GenericNameSignatureHelpProvider_Method.cs" />
-    <Compile Include="SignatureHelp\GenericNameSignatureHelpProvider_NamedType.cs" />
-    <Compile Include="SignatureHelp\InvocationExpressionSignatureHelpProvider.cs" />
-    <Compile Include="SignatureHelp\InvocationExpressionSignatureHelpProvider_DelegateInvoke.cs" />
-    <Compile Include="SignatureHelp\InvocationExpressionSignatureHelpProvider_MethodGroup.cs" />
-    <Compile Include="SignatureHelp\ObjectCreationExpressionSignatureHelpProvider.cs" />
-    <Compile Include="SignatureHelp\ObjectCreationExpressionSignatureHelpProvider_DelegateType.cs" />
-    <Compile Include="SignatureHelp\ObjectCreationExpressionSignatureHelpProvider_NormalType.cs" />
-    <Compile Include="SignatureHelp\SignatureHelpUtilities.cs" />
     <Compile Include="TextStructureNavigation\TextStructureNavigatorProvider.cs" />
     <Compile Include="TodoComment\CSharpTodoCommentIncrementalAnalyzerProvider.cs" />
     <Compile Include="UseAutoProperty\UseAutoPropertyAnalyzer.cs" />
     <Compile Include="UseAutoProperty\UseAutoPropertyCodeFixProvider.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.VisualStudio.CoreUtility, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Language.Intellisense, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Language.StandardClassification, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Text.Data, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Text.Logic, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Text.UI, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Text.UI.Wpf, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>false</Private>
-    </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
     <Reference Include="System" />
@@ -258,7 +219,9 @@
     <PublicAPI Include="PublicAPI.Shipped.txt" />
     <PublicAPI Include="PublicAPI.Unshipped.txt" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Completion\" />
+  </ItemGroup>
   <ImportGroup Label="Targets">
     <Import Project="..\..\..\build\Targets\VSL.Imports.targets" />
   </ImportGroup>

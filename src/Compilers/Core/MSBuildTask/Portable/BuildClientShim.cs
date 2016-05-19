@@ -1,4 +1,6 @@
-﻿using Microsoft.CodeAnalysis.CommandLine;
+﻿// Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+
+using Microsoft.CodeAnalysis.CommandLine;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -14,9 +16,6 @@ namespace Microsoft.CodeAnalysis.BuildTasks
             BuildPaths buildPaths,
             string keepAlive,
             string libEnvVariable,
-            CancellationToken cancellationToken)
-        {
-            throw new NotSupportedException();
-        }
+            CancellationToken cancellationToken) => Task.FromResult<BuildResponse>(null);
     }
 }

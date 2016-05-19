@@ -800,7 +800,7 @@ namespace Microsoft.CodeAnalysis.CSharp {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Argument {0} should not be passed with the &apos;{1}&apos; keyword.
+        ///   Looks up a localized string similar to Argument {0} may not be passed with the &apos;{1}&apos; keyword.
         /// </summary>
         internal static string ERR_BadArgExtraRef {
             get {
@@ -3518,6 +3518,15 @@ namespace Microsoft.CodeAnalysis.CSharp {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Cannot update &apos;{0}&apos;; attribute &apos;{1}&apos; is missing..
+        /// </summary>
+        internal static string ERR_EncUpdateFailedMissingAttribute {
+            get {
+                return ResourceManager.GetString("ERR_EncUpdateFailedMissingAttribute", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to #endif directive expected.
         /// </summary>
         internal static string ERR_EndifDirectiveExpected {
@@ -5282,6 +5291,15 @@ namespace Microsoft.CodeAnalysis.CSharp {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Invalid real literal..
+        /// </summary>
+        internal static string ERR_InvalidReal {
+            get {
+                return ResourceManager.GetString("ERR_InvalidReal", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Invalid signature public key specified in AssemblySignatureKeyAttribute..
         /// </summary>
         internal static string ERR_InvalidSignaturePublicKey {
@@ -7037,6 +7055,15 @@ namespace Microsoft.CodeAnalysis.CSharp {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to An error occurred while writing the output file: {0}.
+        /// </summary>
+        internal static string ERR_PeWritingFailure {
+            get {
+                return ResourceManager.GetString("ERR_PeWritingFailure", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Neither &apos;is&apos; nor &apos;as&apos; is valid on pointer types.
         /// </summary>
         internal static string ERR_PointerInAsOrIs {
@@ -8113,6 +8140,15 @@ namespace Microsoft.CodeAnalysis.CSharp {
         internal static string ERR_TooManyLocals {
             get {
                 return ResourceManager.GetString("ERR_TooManyLocals", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Combined length of user strings used by the program exceeds allowed limit. Try to decrease use of string literals..
+        /// </summary>
+        internal static string ERR_TooManyUserStrings {
+            get {
+                return ResourceManager.GetString("ERR_TooManyUserStrings", resourceCulture);
             }
         }
         
@@ -9752,6 +9788,15 @@ namespace Microsoft.CodeAnalysis.CSharp {
         internal static string SyntaxTreeFromLoadNoRemoveReplace {
             get {
                 return ResourceManager.GetString("SyntaxTreeFromLoadNoRemoveReplace", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Syntax tree should be created from a submission..
+        /// </summary>
+        internal static string SyntaxTreeIsNotASubmission {
+            get {
+                return ResourceManager.GetString("SyntaxTreeIsNotASubmission", resourceCulture);
             }
         }
         
@@ -11711,7 +11756,7 @@ namespace Microsoft.CodeAnalysis.CSharp {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to &apos;{0}&apos; is not a recognized attribute location. All attributes in this block will be ignored..
+        ///   Looks up a localized string similar to &apos;{0}&apos; is not a recognized attribute location. Valid attribute locations for this declaration are &apos;{1}&apos;. All attributes in this block will be ignored..
         /// </summary>
         internal static string WRN_InvalidAttributeLocation {
             get {

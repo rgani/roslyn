@@ -95,7 +95,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             return new CSDiagnostic(info, location);
         }
 
-        public override string ConvertSymbolToString(int errorCode, ISymbol symbol)
+        public override string GetErrorDisplayString(ISymbol symbol)
         {
             // show extra info for assembly if possible such as version, public key token etc.
             if (symbol.Kind == SymbolKind.Assembly || symbol.Kind == SymbolKind.Namespace)
@@ -143,6 +143,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         // compilation options:
         public override int ERR_BadCompilationOptionValue { get { return (int)ErrorCode.ERR_BadCompilationOptionValue; } }
+        public override int ERR_MutuallyExclusiveOptions => (int)ErrorCode.ERR_MutuallyExclusiveOptions;
 
         // emit options:
         public override int ERR_InvalidDebugInformationFormat { get { return (int)ErrorCode.ERR_InvalidDebugInformationFormat; } }
@@ -201,6 +202,10 @@ namespace Microsoft.CodeAnalysis.CSharp
         // PE Writer:
         public override int ERR_MetadataNameTooLong { get { return (int)ErrorCode.ERR_MetadataNameTooLong; } }
         public override int ERR_EncReferenceToAddedMember { get { return (int)ErrorCode.ERR_EncReferenceToAddedMember; } }
+        public override int ERR_TooManyUserStrings { get { return (int)ErrorCode.ERR_TooManyUserStrings; } }
+        public override int ERR_PeWritingFailure { get { return (int)ErrorCode.ERR_PeWritingFailure; } }
+        public override int ERR_ModuleEmitFailure { get { return (int)ErrorCode.ERR_ModuleEmitFailure; } }
+        public override int ERR_EncUpdateFailedMissingAttribute { get { return (int)ErrorCode.ERR_EncUpdateFailedMissingAttribute; } }
 
         public override void ReportInvalidAttributeArgument(DiagnosticBag diagnostics, SyntaxNode attributeSyntax, int parameterIndex, AttributeData attribute)
         {

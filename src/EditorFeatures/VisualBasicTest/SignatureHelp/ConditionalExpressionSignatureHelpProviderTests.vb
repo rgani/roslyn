@@ -2,7 +2,8 @@
 
 Imports Microsoft.CodeAnalysis.Editor.UnitTests.SignatureHelp
 Imports Microsoft.CodeAnalysis.Editor.UnitTests.Workspaces
-Imports Microsoft.CodeAnalysis.Editor.VisualBasic.SignatureHelp
+Imports Microsoft.CodeAnalysis.SignatureHelp
+Imports Microsoft.CodeAnalysis.VisualBasic.SignatureHelp
 
 Namespace Microsoft.CodeAnalysis.Editor.VisualBasic.UnitTests.SignatureHelp
     Public Class BinaryConditionalExpressionSignatureHelpProviderTests
@@ -16,8 +17,8 @@ Namespace Microsoft.CodeAnalysis.Editor.VisualBasic.UnitTests.SignatureHelp
             Return New BinaryConditionalExpressionSignatureHelpProvider
         End Function
 
-        <WpfFact, Trait(Traits.Feature, Traits.Features.SignatureHelp)>
-        Public Sub TestInvocationForIf()
+        <Fact, Trait(Traits.Feature, Traits.Features.SignatureHelp)>
+        Public Async Function TestInvocationForIf() As Task
             Dim markup = <a><![CDATA[
 Class C
     Sub Foo()
@@ -37,11 +38,11 @@ End Class
                                      IfConditionReturnsResults,
                                      ExpressionToEvaluate,
                                      currentParameterIndex:=0))
-            Test(markup, expectedOrderedItems)
-        End Sub
+            Await TestAsync(markup, expectedOrderedItems)
+        End Function
 
-        <WpfFact, Trait(Traits.Feature, Traits.Features.SignatureHelp)>
-        Public Sub TestInvocationForIfAfterComma()
+        <Fact, Trait(Traits.Feature, Traits.Features.SignatureHelp)>
+        Public Async Function TestInvocationForIfAfterComma() As Task
             Dim markup = <a><![CDATA[
 Class C
     Sub Foo()
@@ -61,7 +62,7 @@ End Class
                                      IfConditionReturnsResults,
                                      EvaluatedAndReturnedIfTrue,
                                      currentParameterIndex:=1))
-            Test(markup, expectedOrderedItems)
-        End Sub
+            Await TestAsync(markup, expectedOrderedItems)
+        End Function
     End Class
 End Namespace

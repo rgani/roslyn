@@ -40,21 +40,53 @@ namespace Microsoft.CodeAnalysis.BuildTasks.UnitTests
             Assert.Equal("/out:test.exe test.cs", csc.GenerateResponseFileContents());
         }
 
-        [Fact] 
+        [Fact]
         public void DeterministicFlag()
         {
             var csc = new Csc();
             csc.Sources = MSBuildUtil.CreateTaskItems("test.cs");
             csc.Deterministic = true;
-            Assert.Equal("/deterministic+ /out:test.exe test.cs", csc.GenerateResponseFileContents());
+            Assert.Equal("/out:test.exe /deterministic+ test.cs", csc.GenerateResponseFileContents());
 
             csc = new Csc();
             csc.Sources = MSBuildUtil.CreateTaskItems("test.cs");
             csc.Deterministic = false;
-            Assert.Equal("/deterministic- /out:test.exe test.cs", csc.GenerateResponseFileContents());
+            Assert.Equal("/out:test.exe /deterministic- test.cs", csc.GenerateResponseFileContents());
 
             csc = new Csc();
             csc.Sources = MSBuildUtil.CreateTaskItems("test.cs");
+            Assert.Equal("/out:test.exe test.cs", csc.GenerateResponseFileContents());
+        }
+
+        [Fact]
+        public void PublicSignFlag()
+        {
+            var csc = new Csc();
+            csc.Sources = MSBuildUtil.CreateTaskItems("test.cs");
+            csc.PublicSign = true;
+            Assert.Equal("/out:test.exe /publicsign+ test.cs", csc.GenerateResponseFileContents());
+
+            csc = new Csc();
+            csc.Sources = MSBuildUtil.CreateTaskItems("test.cs");
+            csc.PublicSign = false;
+            Assert.Equal("/out:test.exe /publicsign- test.cs", csc.GenerateResponseFileContents());
+
+            csc = new Csc();
+            csc.Sources = MSBuildUtil.CreateTaskItems("test.cs");
+            Assert.Equal("/out:test.exe test.cs", csc.GenerateResponseFileContents());
+        }
+
+        [Fact]
+        public void RuntimeMetadataVersionFlag()
+        {
+            var csc = new Csc();
+            csc.Sources = MSBuildUtil.CreateTaskItems("test.cs");
+            csc.RuntimeMetadataVersion = "v1234";
+            Assert.Equal("/out:test.exe /runtimemetadataversion:v1234 test.cs", csc.GenerateResponseFileContents());
+
+            csc = new Csc();
+            csc.Sources = MSBuildUtil.CreateTaskItems("test.cs");
+            csc.RuntimeMetadataVersion = null;
             Assert.Equal("/out:test.exe test.cs", csc.GenerateResponseFileContents());
         }
 

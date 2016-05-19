@@ -32,7 +32,7 @@ namespace Microsoft.CodeAnalysis.SpellCheck
             }
 
             SemanticModel semanticModel = null;
-            foreach(var name in node.DescendantNodesAndSelf().OfType<TSimpleName>())
+            foreach (var name in node.DescendantNodesAndSelf().OfType<TSimpleName>())
             {
                 // Only bother with identifiers that are at least 3 characters long.
                 // We don't want to be too noisy as you're just starting to type something.
@@ -52,35 +52,36 @@ namespace Microsoft.CodeAnalysis.SpellCheck
         private async Task CreateSpellCheckCodeIssueAsync(CodeFixContext context, TSimpleName nameNode, string nameText, CancellationToken cancellationToken)
         {
             var document = context.Document;
-            var completionList = await CompletionService.GetCompletionListAsync(
-                document, nameNode.SpanStart, CompletionTriggerInfo.CreateInvokeCompletionTriggerInfo(), cancellationToken: cancellationToken).ConfigureAwait(false);
+            var service = CompletionService.GetService(document);
+            var completionList = await service.GetCompletionsAsync(
+                document, nameNode.SpanStart, cancellationToken: cancellationToken).ConfigureAwait(false);
             if (completionList == null)
             {
                 return;
             }
 
-            var completionRules = CompletionService.GetCompletionRules(document);
             var onlyConsiderGenerics = IsGeneric(nameNode);
             var results = new MultiDictionary<double, string>();
 
-            int closeMatchThreshold = EditDistance.GetCloseMatchThreshold(nameText);
-
-            foreach (var item in completionList.Items)
+            using (var similarityChecker = new WordSimilarityChecker(nameText, substringsAreSimilar: true))
             {
-                if (onlyConsiderGenerics && !IsGeneric(item))
+                foreach (var item in completionList.Items)
                 {
-                    continue;
-                }
+                    if (onlyConsiderGenerics && !IsGeneric(item))
+                    {
+                        continue;
+                    }
 
-                var candidateText = item.FilterText;
-                double matchCost;
-                if (!EditDistance.IsCloseMatch(nameText, candidateText, closeMatchThreshold, out matchCost))
-                {
-                    continue;
-                }
+                    var candidateText = item.FilterText;
+                    double matchCost;
+                    if (!similarityChecker.AreSimilar(candidateText, out matchCost))
+                    {
+                        continue;
+                    }
 
-                var insertionText = completionRules.GetTextChange(item).NewText;
-                results.Add(matchCost, insertionText);
+                    var insertionText = await GetInsertionTextAsync(document, item, cancellationToken: cancellationToken).ConfigureAwait(false);
+                    results.Add(matchCost, insertionText);
+                }
             }
 
             var matches = results.OrderBy(kvp => kvp.Key)
@@ -89,6 +90,22 @@ namespace Microsoft.CodeAnalysis.SpellCheck
                                  .Take(3)
                                  .Select(n => CreateCodeAction(nameNode, nameText, n, document));
             context.RegisterFixes(matches, context.Diagnostics);
+        }
+
+        private async Task<string> GetInsertionTextAsync(Document document, CompletionItem item, CancellationToken cancellationToken)
+        {
+            var service = CompletionService.GetService(document);
+            var change = await service.GetChangeAsync(document, item, null, cancellationToken).ConfigureAwait(false);
+
+            // normally the items that produce multiple changes are not expecting to trigger the behaviors that rely on looking at the text
+            if (change.TextChanges.Length == 1)
+            {
+                return change.TextChanges[0].NewText;
+            }
+            else
+            {
+                return item.DisplayText;
+            }
         }
 
         private SpellCheckCodeAction CreateCodeAction(TSimpleName nameNode, string oldName, string newName, Document document)

@@ -80,7 +80,7 @@ namespace Microsoft.CodeAnalysis.UnitTests.PEWriter
             TestContentEquals(new byte[] { 1 }, new byte[] { 1 });
 
             TestContentEquals(
-                new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 }, 
+                new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 },
                 new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 });
 
             TestContentEquals(
@@ -183,8 +183,10 @@ namespace Microsoft.CodeAnalysis.UnitTests.PEWriter
             }
         }
 
+
+
         [Fact]
-        public void ToArray()
+        public void ToArray1()
         {
             var builder = new BlobBuilder(16);
 
@@ -220,6 +222,43 @@ namespace Microsoft.CodeAnalysis.UnitTests.PEWriter
             AssertEx.Equal(new byte[] { 0xcc, 0xbb, 0xaa }, builder.ToArray(14, 3));
 
             AssertEx.Equal(new byte[] { 0xdd, 0xcc, 0xbb, 0xaa }, builder.ToArray(13, 4));
+        }
+
+        [Fact]
+        public void ToArray2()
+        {
+            var builder = new BlobBuilder(16);
+
+            AssertEx.Equal(new byte[] { }, builder.ToArray(0, 0));
+
+            for (int i = 0; i < 34; i++)
+            {
+                builder.WriteByte((byte)i);
+            }
+
+            AssertEx.Equal(new byte[]
+            {
+                0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
+                0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F,
+                0x20, 0x21
+            }, builder.ToArray());
+
+            AssertEx.Equal(new byte[]
+            {
+                0x0E, 0x0F,
+                0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F,
+                0x20, 0x21
+            }, builder.ToArray(0x0e, 20));
+
+            AssertEx.Equal(new byte[] { 0x0E }, builder.ToArray(0x0e, 1));
+            AssertEx.Equal(new byte[] { 0x0E, 0x0F }, builder.ToArray(0x0e, 2));
+            AssertEx.Equal(new byte[] { 0x0E, 0x0F, 0x10 }, builder.ToArray(0x0e, 3));
+            AssertEx.Equal(new byte[] { 0x0E, 0x0F, 0x10, 0x11 }, builder.ToArray(0x0e, 4));
+
+            AssertEx.Equal(new byte[] { 0x1E }, builder.ToArray(0x1e, 1));
+            AssertEx.Equal(new byte[] { 0x1E, 0x1F }, builder.ToArray(0x1e, 2));
+            AssertEx.Equal(new byte[] { 0x1E, 0x1F, 0x20 }, builder.ToArray(0x1e, 3));
+            AssertEx.Equal(new byte[] { 0x1E, 0x1F, 0x20, 0x21 }, builder.ToArray(0x1e, 4));
         }
 
         [Fact]
@@ -296,7 +335,7 @@ namespace Microsoft.CodeAnalysis.UnitTests.PEWriter
 
             var stream = new MemoryStream();
             builder.WriteContentTo(stream);
-            AssertEx.Equal(new byte[] 
+            AssertEx.Equal(new byte[]
             {
                 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13
             }, stream.ToArray());
@@ -512,7 +551,7 @@ namespace Microsoft.CodeAnalysis.UnitTests.PEWriter
 
             var blobs = builder.GetBlobs().ToArray();
             Assert.Equal(1, blobs.Length);
-            AssertEx.Equal(new byte[] 
+            AssertEx.Equal(new byte[]
             {
                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
@@ -556,10 +595,10 @@ namespace Microsoft.CodeAnalysis.UnitTests.PEWriter
 
             TestCompressedUnsignedInteger(new byte[] { 0x00 }, 0);
             TestCompressedUnsignedInteger(new byte[] { 0x03 }, 0x03);
-            TestCompressedUnsignedInteger(new byte[] { 0x7f }, 0x7F);                    
-            TestCompressedUnsignedInteger(new byte[] { 0x80, 0x80 }, 0x80);              
-            TestCompressedUnsignedInteger(new byte[] { 0xAE, 0x57 }, 0x2E57);            
-            TestCompressedUnsignedInteger(new byte[] { 0xBF, 0xFF }, 0x3FFF);            
+            TestCompressedUnsignedInteger(new byte[] { 0x7f }, 0x7F);
+            TestCompressedUnsignedInteger(new byte[] { 0x80, 0x80 }, 0x80);
+            TestCompressedUnsignedInteger(new byte[] { 0xAE, 0x57 }, 0x2E57);
+            TestCompressedUnsignedInteger(new byte[] { 0xBF, 0xFF }, 0x3FFF);
             TestCompressedUnsignedInteger(new byte[] { 0xC0, 0x00, 0x40, 0x00 }, 0x4000);
             TestCompressedUnsignedInteger(new byte[] { 0xDF, 0xFF, 0xFF, 0xFF }, 0x1FFFFFFF);
         }
@@ -601,13 +640,13 @@ namespace Microsoft.CodeAnalysis.UnitTests.PEWriter
             writer.WriteDouble(double.NaN);
             writer.WriteSingle(float.NegativeInfinity);
 
-            AssertEx.Equal(new byte[] 
+            AssertEx.Equal(new byte[]
             {
                 0x44, 0x33, 0x22, 0x11,
                 0x66, 0x55,
                 0x77,
                 0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88,
-                0xff, 0xff, 0xff, 0xff, 
+                0xff, 0xff, 0xff, 0xff,
                 0xfe, 0xff,
                 0xfd,
                 0x01,
@@ -656,7 +695,7 @@ namespace Microsoft.CodeAnalysis.UnitTests.PEWriter
             writer.WriteBytes(2, 10);
             writer.WriteBytes(0xff, 0);
             writer.WriteBytes(3, 1);
-            
+
             AssertEx.Equal(new byte[]
             {
                 0x01, 0x01, 0x01, 0x01,
@@ -710,7 +749,7 @@ namespace Microsoft.CodeAnalysis.UnitTests.PEWriter
             writer.WriteUTF16("\udc00");                          // lo surrogate
             writer.WriteUTF16("\ud800\udc00");                    // pair
             writer.WriteUTF16(new char[] { '\udc00', '\ud800' }); // lo + hi
-            writer.WriteUTF16("\u1234");       
+            writer.WriteUTF16("\u1234");
 
             AssertEx.Equal(new byte[]
             {
@@ -786,7 +825,6 @@ namespace Microsoft.CodeAnalysis.UnitTests.PEWriter
                 0x00, 0xED, 0xB0, 0x80,
                 0x00, 0xF0, 0x90, 0x80, 0x80,
                 0x00, 0xED, 0xB0, 0x80, 0xED, 0xA0, 0x80
-
             }, writer.ToArray());
         }
 
@@ -823,7 +861,6 @@ namespace Microsoft.CodeAnalysis.UnitTests.PEWriter
                 0x00, 0xEF, 0xBF, 0xBD,
                 0x00, 0xF0, 0x90, 0x80, 0x80,
                 0x00, 0xEF, 0xBF, 0xBD, 0xEF, 0xBF, 0xBD
-
             }, writer.ToArray());
         }
 

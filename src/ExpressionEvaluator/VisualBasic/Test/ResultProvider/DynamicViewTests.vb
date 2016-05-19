@@ -6,9 +6,10 @@ Imports System.Dynamic
 Imports Microsoft.CodeAnalysis.ExpressionEvaluator
 Imports Microsoft.VisualStudio.Debugger.Clr
 Imports Microsoft.VisualStudio.Debugger.Evaluation
+Imports Roslyn.Test.Utilities
 Imports Xunit
 
-Namespace Microsoft.CodeAnalysis.VisualBasic.ExpressionEvaluator
+Namespace Microsoft.CodeAnalysis.VisualBasic.ExpressionEvaluator.UnitTests
 
     Public Class DynamicViewTests : Inherits VisualBasicResultProviderTestBase
 
@@ -114,21 +115,24 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.ExpressionEvaluator
         End Sub
 
         <Fact>
+        <WorkItem(5667, "https://github.com/dotnet/roslyn/issues/5667")>
         Public Sub NoMembers()
-            Dim expression = "o"
-            Dim o As Object = New ExpandoObject()
+            Using New EnsureEnglishUICulture()
+                Dim expression = "o"
+                Dim o As Object = New ExpandoObject()
 
-            Dim type = New DkmClrType(CType(o.GetType(), TypeImpl))
-            Dim value = CreateDkmClrValue(o, type)
+                Dim type = New DkmClrType(CType(o.GetType(), TypeImpl))
+                Dim value = CreateDkmClrValue(o, type)
 
-            Dim result = FormatResult(expression, value)
-            Verify(result,
+                Dim result = FormatResult(expression, value)
+                Verify(result,
                 EvalResult(expression, "{System.Dynamic.ExpandoObject}", "System.Dynamic.ExpandoObject", expression, DkmEvaluationResultFlags.Expandable))
-            Dim dynamicView = GetChildren(result).Last()
-            Verify(dynamicView,
-                EvalResult(Resources.DynamicView, Resources.DynamicViewValueWarning, "", "o, dynamic", DkmEvaluationResultFlags.Expandable Or DkmEvaluationResultFlags.ReadOnly))
-            Verify(GetChildren(dynamicView),
-            EvalFailedResult(Resources.ErrorName, DynamicDebugViewEmptyMessage))
+                Dim dynamicView = GetChildren(result).Last()
+                Verify(dynamicView,
+                       EvalResult(Resources.DynamicView, Resources.DynamicViewValueWarning, "", "o, dynamic", DkmEvaluationResultFlags.Expandable Or DkmEvaluationResultFlags.ReadOnly))
+                Verify(GetChildren(dynamicView),
+                       EvalFailedResult(Resources.ErrorName, GetDynamicDebugViewEmptyMessage()))
+            End Using
         End Sub
 
         <Fact>

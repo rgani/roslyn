@@ -17,15 +17,15 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Recommendations
     Friend Class VisualBasicRecommendationService
         Inherits AbstractRecommendationService
 
-        Protected Overrides Function GetRecommendedSymbolsAtPositionWorker(
+        Protected Overrides Async Function GetRecommendedSymbolsAtPositionWorkerAsync(
             workspace As Workspace,
             semanticModel As SemanticModel,
             position As Integer,
             options As OptionSet,
             cancellationToken As CancellationToken
-        ) As Tuple(Of IEnumerable(Of ISymbol), AbstractSyntaxContext)
+        ) As Tasks.Task(Of Tuple(Of IEnumerable(Of ISymbol), AbstractSyntaxContext))
 
-            Dim context = VisualBasicSyntaxContext.CreateContext(workspace, semanticModel, position, cancellationToken)
+            Dim context = Await VisualBasicSyntaxContext.CreateContextAsync(workspace, semanticModel, position, cancellationToken).ConfigureAwait(False)
 
             Dim filterOutOfScopeLocals = options.GetOption(RecommendationOptions.FilterOutOfScopeLocals, semanticModel.Language)
             Dim symbols = GetSymbolsWorker(context, filterOutOfScopeLocals, cancellationToken)
@@ -48,7 +48,9 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Recommendations
             End If
 
             Dim node = context.TargetToken.Parent
-            If context.IsRightOfNameSeparator Then
+            If context.IsGlobalStatementContext Then
+                Return GetSymbolsForGlobalStatementContext(context, cancellationToken)
+            ElseIf context.IsRightOfNameSeparator Then
                 If node.Kind = SyntaxKind.SimpleMemberAccessExpression Then
                     Return GetSymbolsForMemberAccessExpression(context, DirectCast(node, MemberAccessExpressionSyntax), cancellationToken)
                 ElseIf node.Kind = SyntaxKind.QualifiedName Then
@@ -66,9 +68,34 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Recommendations
                 Return GetUnqualifiedSymbolsForLabelContext(context, cancellationToken)
             ElseIf context.SyntaxTree.IsRaiseEventContext(context.Position, context.TargetToken, cancellationToken) Then
                 Return GetUnqualifiedSymbolsForRaiseEvent(context, cancellationToken)
+            ElseIf context.TargetToken.IsKind(SyntaxKind.ForKeyword) Then
+                Dim symbols = GetUnqualifiedSymbolsForExpressionOrStatementContext(context, filterOutOfScopeLocals, cancellationToken) _
+                    .Where(AddressOf IsWritableFieldOrLocal)
+                Return symbols
             End If
 
             Return SpecializedCollections.EmptyEnumerable(Of ISymbol)()
+        End Function
+
+        Private Function IsWritableFieldOrLocal(symbol As ISymbol) As Boolean
+            If symbol.Kind() = SymbolKind.Field Then
+                Dim field = DirectCast(symbol, IFieldSymbol)
+                Return Not field.IsReadOnly AndAlso Not field.IsConst
+            End If
+
+            If symbol.Kind() = SymbolKind.Local Then
+                Dim local = DirectCast(symbol, ILocalSymbol)
+                Return Not local.IsConst
+            End If
+
+            Return False
+        End Function
+
+        Private Function GetSymbolsForGlobalStatementContext(
+            context As VisualBasicSyntaxContext,
+            cancellationToken As CancellationToken
+        ) As IEnumerable(Of ISymbol)
+            Return context.SemanticModel.LookupSymbols(context.TargetToken.Span.End)
         End Function
 
         Private Function GetUnqualifiedSymbolsForQueryIntoContext(
@@ -210,7 +237,10 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Recommendations
             Dim inNameOfExpression = node.IsParentKind(SyntaxKind.NameOfExpression)
 
             Dim container = DirectCast(leftHandTypeInfo.Type, INamespaceOrTypeSymbol)
-            If leftHandTypeInfo.Type.IsErrorType AndAlso leftHandSymbolInfo.Symbol IsNot Nothing Then
+            If container Is Nothing AndAlso TypeOf (leftHandTypeInfo.ConvertedType) Is IArrayTypeSymbol Then
+                container = DirectCast(leftHandTypeInfo.ConvertedType, INamespaceOrTypeSymbol)
+            End If
+            If container.IsErrorType() AndAlso leftHandSymbolInfo.Symbol IsNot Nothing Then
                 ' TODO remove this when 531549 which causes leftHandTypeInfo to be an error type is fixed
                 container = leftHandSymbolInfo.Symbol.GetSymbolType()
             End If

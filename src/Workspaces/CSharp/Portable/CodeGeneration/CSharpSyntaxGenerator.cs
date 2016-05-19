@@ -149,6 +149,68 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGeneration
                 !hasBody ? SyntaxFactory.Token(SyntaxKind.SemicolonToken) : default(SyntaxToken));
         }
 
+        public override SyntaxNode OperatorDeclaration(OperatorKind kind, IEnumerable<SyntaxNode> parameters = null, SyntaxNode returnType = null, Accessibility accessibility = Accessibility.NotApplicable, DeclarationModifiers modifiers = default(DeclarationModifiers), IEnumerable<SyntaxNode> statements = null)
+        {
+            var hasBody = !modifiers.IsAbstract && (!modifiers.IsPartial || statements != null);
+            var returnTypeNode = returnType != null ? (TypeSyntax)returnType : SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword));
+            var parameterList = AsParameterList(parameters);
+            var body = hasBody ? CreateBlock(statements) : null;
+            var semicolon = !hasBody ? SyntaxFactory.Token(SyntaxKind.SemicolonToken) : default(SyntaxToken);
+            var modifierList = AsModifierList(accessibility, modifiers, SyntaxKind.OperatorDeclaration);
+            var attributes = default(SyntaxList<AttributeListSyntax>);
+
+            if (kind == OperatorKind.ImplicitConversion || kind == OperatorKind.ExplicitConversion)
+            {
+                return SyntaxFactory.ConversionOperatorDeclaration(
+                    attributes, modifierList, SyntaxFactory.Token(GetTokenKind(kind)),
+                    SyntaxFactory.Token(SyntaxKind.OperatorKeyword),
+                    returnTypeNode, parameterList, body, semicolon);
+            }
+            else
+            {
+                return SyntaxFactory.OperatorDeclaration(
+                    attributes, modifierList, returnTypeNode,
+                    SyntaxFactory.Token(SyntaxKind.OperatorKeyword),
+                    SyntaxFactory.Token(GetTokenKind(kind)),
+                    parameterList, body, semicolon);
+            }
+        }
+
+        private SyntaxKind GetTokenKind(OperatorKind kind)
+        {
+            switch (kind)
+            {
+                case OperatorKind.ImplicitConversion: return SyntaxKind.ImplicitKeyword;
+                case OperatorKind.ExplicitConversion: return SyntaxKind.ExplicitKeyword;
+                case OperatorKind.Addition: return SyntaxKind.PlusToken;
+                case OperatorKind.BitwiseAnd: return SyntaxKind.AmpersandToken;
+                case OperatorKind.BitwiseOr: return SyntaxKind.BarToken;
+                case OperatorKind.Decrement: return SyntaxKind.MinusMinusToken;
+                case OperatorKind.Division: return SyntaxKind.SlashToken;
+                case OperatorKind.Equality: return SyntaxKind.EqualsEqualsToken;
+                case OperatorKind.ExclusiveOr: return SyntaxKind.CaretToken;
+                case OperatorKind.False: return SyntaxKind.FalseKeyword;
+                case OperatorKind.GreaterThan: return SyntaxKind.GreaterThanToken;
+                case OperatorKind.GreaterThanOrEqual: return SyntaxKind.GreaterThanEqualsToken;
+                case OperatorKind.Increment: return SyntaxKind.PlusPlusToken;
+                case OperatorKind.Inequality: return SyntaxKind.ExclamationEqualsToken;
+                case OperatorKind.LeftShift: return SyntaxKind.LessThanLessThanToken;
+                case OperatorKind.LessThan: return SyntaxKind.LessThanToken;
+                case OperatorKind.LessThanOrEqual: return SyntaxKind.LessThanEqualsToken;
+                case OperatorKind.LogicalNot: return SyntaxKind.ExclamationToken;
+                case OperatorKind.Modulus: return SyntaxKind.PercentToken;
+                case OperatorKind.Multiply: return SyntaxKind.AsteriskToken;
+                case OperatorKind.OnesComplement: return SyntaxKind.TildeToken;
+                case OperatorKind.RightShift: return SyntaxKind.GreaterThanGreaterThanToken;
+                case OperatorKind.Subtraction: return SyntaxKind.MinusToken;
+                case OperatorKind.True: return SyntaxKind.TrueKeyword;
+                case OperatorKind.UnaryNegation: return SyntaxKind.MinusToken;
+                case OperatorKind.UnaryPlus: return SyntaxKind.PlusToken;
+                default:
+                    throw new ArgumentException("Unknown operator kind.");
+            }
+        }
+
         private ParameterListSyntax AsParameterList(IEnumerable<SyntaxNode> parameters)
         {
             return parameters != null
@@ -386,7 +448,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGeneration
         private SyntaxNode WithoutConstraints(SyntaxNode declaration)
         {
             if (declaration.IsKind(SyntaxKind.MethodDeclaration))
-            { 
+            {
                 var method = (MethodDeclarationSyntax)declaration;
                 if (method.ConstraintClauses.Count > 0)
                 {
@@ -1140,16 +1202,21 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGeneration
 
         public override SyntaxNode InsertNamespaceImports(SyntaxNode declaration, int index, IEnumerable<SyntaxNode> imports)
         {
-            var usings = AsUsingDirectives(imports);
+            return PreserveTrivia(declaration, d => InsertNamespaceImportsInternal(d, index, imports));
+        }
+
+        private SyntaxNode InsertNamespaceImportsInternal(SyntaxNode declaration, int index, IEnumerable<SyntaxNode> imports)
+        {
+            SyntaxList<UsingDirectiveSyntax> usingsToInsert = AsUsingDirectives(imports);
 
             switch (declaration.Kind())
             {
                 case SyntaxKind.CompilationUnit:
-                    var cu = ((CompilationUnitSyntax)declaration);
-                    return cu.WithUsings(cu.Usings.InsertRange(index, usings));
+                    var cu = (CompilationUnitSyntax)declaration;
+                    return cu.WithUsings(cu.Usings.InsertRange(index, usingsToInsert));
                 case SyntaxKind.NamespaceDeclaration:
-                    var nd = ((NamespaceDeclarationSyntax)declaration);
-                    return nd.WithUsings(nd.Usings.InsertRange(index, usings));
+                    var nd = (NamespaceDeclarationSyntax)declaration;
+                    return nd.WithUsings(nd.Usings.InsertRange(index, usingsToInsert));
                 default:
                     return declaration;
             }
@@ -1648,6 +1715,11 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGeneration
                 list = list.Add(SyntaxFactory.Token(SyntaxKind.NewKeyword));
             }
 
+            if (modifiers.IsSealed)
+            {
+                list = list.Add(SyntaxFactory.Token(SyntaxKind.SealedKeyword));
+            }
+
             if (modifiers.IsOverride)
             {
                 list = list.Add(SyntaxFactory.Token(SyntaxKind.OverrideKeyword));
@@ -1676,11 +1748,6 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGeneration
             if (modifiers.IsReadOnly)
             {
                 list = list.Add(SyntaxFactory.Token(SyntaxKind.ReadOnlyKeyword));
-            }
-
-            if (modifiers.IsSealed)
-            {
-                list = list.Add(SyntaxFactory.Token(SyntaxKind.SealedKeyword));
             }
 
             if (modifiers.IsUnsafe)
@@ -3328,6 +3395,13 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGeneration
         public override SyntaxNode AwaitExpression(SyntaxNode expression)
         {
             return SyntaxFactory.AwaitExpression((ExpressionSyntax)expression);
+        }
+
+        public override SyntaxNode NameOfExpression(SyntaxNode expression)
+        {
+            return InvocationExpression(
+                IdentifierName(SyntaxFacts.GetText(SyntaxKind.NameOfKeyword)),
+                expression);
         }
 
         public override SyntaxNode ReturnStatement(SyntaxNode expressionOpt = null)

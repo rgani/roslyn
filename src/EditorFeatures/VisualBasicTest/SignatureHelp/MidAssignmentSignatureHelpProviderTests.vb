@@ -2,7 +2,8 @@
 
 Imports Microsoft.CodeAnalysis.Editor.UnitTests.SignatureHelp
 Imports Microsoft.CodeAnalysis.Editor.UnitTests.Workspaces
-Imports Microsoft.CodeAnalysis.Editor.VisualBasic.SignatureHelp
+Imports Microsoft.CodeAnalysis.SignatureHelp
+Imports Microsoft.CodeAnalysis.VisualBasic.SignatureHelp
 
 Namespace Microsoft.CodeAnalysis.Editor.VisualBasic.UnitTests.SignatureHelp
     Public Class MidAssignmentSignatureHelpProviderTests
@@ -16,8 +17,8 @@ Namespace Microsoft.CodeAnalysis.Editor.VisualBasic.UnitTests.SignatureHelp
             Return New MidAssignmentSignatureHelpProvider()
         End Function
 
-        <WpfFact, Trait(Traits.Feature, Traits.Features.SignatureHelp)>
-        Public Sub TestInvocationForMidAssignmentFirstArgument()
+        <Fact, Trait(Traits.Feature, Traits.Features.SignatureHelp)>
+        Public Async Function TestInvocationForMidAssignmentFirstArgument() As Task
             Dim markup = <a><![CDATA[
 Class C
     Sub Foo()
@@ -32,12 +33,12 @@ End Class
                                      ReplacesChars,
                                      NameOfStringVariable,
                                      currentParameterIndex:=0))
-            Test(markup, expectedOrderedItems)
-            Test(markup, expectedOrderedItems, usePreviousCharAsTrigger:=True)
-        End Sub
+            Await TestAsync(markup, expectedOrderedItems)
+            Await TestAsync(markup, expectedOrderedItems, usePreviousCharAsTrigger:=True)
+        End Function
 
-        <WpfFact, Trait(Traits.Feature, Traits.Features.SignatureHelp)>
-        Public Sub TestInvocationForMidAssignmentSecondArgument()
+        <Fact, Trait(Traits.Feature, Traits.Features.SignatureHelp)>
+        Public Async Function TestInvocationForMidAssignmentSecondArgument() As Task
             Dim markup = <a><![CDATA[
 Class C
     Sub Foo()
@@ -52,12 +53,12 @@ End Class
                                      ReplacesChars,
                                      OneBasedStartPos,
                                      currentParameterIndex:=1))
-            Test(markup, expectedOrderedItems)
-            Test(markup, expectedOrderedItems, usePreviousCharAsTrigger:=True)
-        End Sub
+            Await TestAsync(markup, expectedOrderedItems)
+            Await TestAsync(markup, expectedOrderedItems, usePreviousCharAsTrigger:=True)
+        End Function
 
-        <WpfFact, Trait(Traits.Feature, Traits.Features.SignatureHelp)>
-        Public Sub TestInvocationForMidAssignmentThirdArgument()
+        <Fact, Trait(Traits.Feature, Traits.Features.SignatureHelp)>
+        Public Async Function TestInvocationForMidAssignmentThirdArgument() As Task
             Dim markup = <a><![CDATA[
 Class C
     Sub Foo()
@@ -72,8 +73,8 @@ End Class
                                      ReplacesChars,
                                      NumberOfCharsToReplace,
                                      currentParameterIndex:=2))
-            Test(markup, expectedOrderedItems)
-            Test(markup, expectedOrderedItems, usePreviousCharAsTrigger:=True)
-        End Sub
+            Await TestAsync(markup, expectedOrderedItems)
+            Await TestAsync(markup, expectedOrderedItems, usePreviousCharAsTrigger:=True)
+        End Function
     End Class
 End Namespace

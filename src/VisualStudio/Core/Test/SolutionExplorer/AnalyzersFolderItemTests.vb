@@ -1,5 +1,6 @@
 ' Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
+Imports System.Threading.Tasks
 Imports Microsoft.CodeAnalysis.Editor.UnitTests.Workspaces
 Imports Microsoft.VisualStudio.LanguageServices.Implementation.SolutionExplorer
 Imports Microsoft.VisualStudio.LanguageServices.SolutionExplorer
@@ -7,8 +8,8 @@ Imports Roslyn.Test.Utilities
 
 Namespace Microsoft.VisualStudio.LanguageServices.UnitTests.SolutionExplorer
     Public Class AnalyzersFolderItemTests
-        <WpfFact, Trait(Traits.Feature, Traits.Features.Diagnostics)>
-        Public Sub Name()
+        <Fact, Trait(Traits.Feature, Traits.Features.Diagnostics)>
+        Public Async Function Name() As Task
             Dim workspaceXml =
                 <Workspace>
                     <Project Language="C#" CommonReferences="true">
@@ -16,17 +17,17 @@ Namespace Microsoft.VisualStudio.LanguageServices.UnitTests.SolutionExplorer
                     </Project>
                 </Workspace>
 
-            Using workspace = TestWorkspaceFactory.CreateWorkspace(workspaceXml)
+            Using workspace = Await TestWorkspace.CreateAsync(workspaceXml)
                 Dim project = workspace.Projects.Single()
 
                 Dim analyzerFolder = New AnalyzersFolderItem(workspace, project.Id, Nothing, Nothing)
 
                 Assert.Equal(expected:=SolutionExplorerShim.AnalyzersFolderItem_Name, actual:=analyzerFolder.Text)
             End Using
-        End Sub
+        End Function
 
-        <WpfFact, Trait(Traits.Feature, Traits.Features.Diagnostics)>
-        Public Sub BrowseObject()
+        <Fact, Trait(Traits.Feature, Traits.Features.Diagnostics)>
+        Public Async Function BrowseObject1() As Task
             Dim workspaceXml =
                 <Workspace>
                     <Project Language="C#" CommonReferences="true">
@@ -34,7 +35,7 @@ Namespace Microsoft.VisualStudio.LanguageServices.UnitTests.SolutionExplorer
                     </Project>
                 </Workspace>
 
-            Using workspace = TestWorkspaceFactory.CreateWorkspace(workspaceXml)
+            Using workspace = Await TestWorkspace.CreateAsync(workspaceXml)
                 Dim project = workspace.Projects.Single()
 
                 Dim analyzerFolder = New AnalyzersFolderItem(workspace, project.Id, Nothing, Nothing)
@@ -43,6 +44,6 @@ Namespace Microsoft.VisualStudio.LanguageServices.UnitTests.SolutionExplorer
                 Assert.Equal(expected:=SolutionExplorerShim.AnalyzersFolderItem_Name, actual:=browseObject.GetComponentName())
                 Assert.Equal(expected:=SolutionExplorerShim.AnalyzersFolderItem_PropertyWindowClassName, actual:=browseObject.GetClassName())
             End Using
-        End Sub
+        End Function
     End Class
 End Namespace

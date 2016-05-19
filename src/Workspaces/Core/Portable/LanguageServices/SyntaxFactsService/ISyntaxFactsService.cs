@@ -45,6 +45,9 @@ namespace Microsoft.CodeAnalysis.LanguageServices
         bool IsObjectCreationExpression(SyntaxNode node);
         bool IsInvocationExpression(SyntaxNode node);
 
+        bool IsLeftSideOfDot(SyntaxNode node);
+        SyntaxNode GetRightSideOfDot(SyntaxNode node);
+
         bool IsRightSideOfQualifiedName(SyntaxNode node);
         bool IsMemberAccessExpressionName(SyntaxNode node);
 
@@ -156,6 +159,12 @@ namespace Microsoft.CodeAnalysis.LanguageServices
         IEnumerable<SyntaxNode> GetConstructors(SyntaxNode root, CancellationToken cancellationToken);
 
         bool TryGetCorrespondingOpenBrace(SyntaxToken token, out SyntaxToken openBrace);
+
+        /// <summary>
+        /// Given a <see cref="SyntaxNode"/>, that represents and argument return the string representation of
+        /// that arguments name.
+        /// </summary>
+        string GetNameForArgument(SyntaxNode argument);
     }
 
     [Flags]

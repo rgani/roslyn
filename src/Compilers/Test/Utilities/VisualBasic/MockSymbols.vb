@@ -706,6 +706,10 @@ Friend Class MockModuleSymbol
             Return Nothing
         End Get
     End Property
+
+    Public Overrides Function GetMetadata() As ModuleMetadata
+        Return Nothing
+    End Function
 End Class
 
 Friend Class MockAssemblySymbol
@@ -722,6 +726,12 @@ Friend Class MockAssemblySymbol
     Public Overrides ReadOnly Property Identity As AssemblyIdentity
         Get
             Return New AssemblyIdentity(_name)
+        End Get
+    End Property
+
+    Public Overrides ReadOnly Property AssemblyVersionPattern As Version
+        Get
+            Return Nothing
         End Get
     End Property
 
@@ -800,6 +810,10 @@ Friend Class MockAssemblySymbol
     End Property
 
     Friend Overrides Function TryLookupForwardedMetadataTypeWithCycleDetection(ByRef emittedName As MetadataTypeName, visitedAssemblies As ConsList(Of AssemblySymbol), ignoreCase As Boolean) As NamedTypeSymbol
+        Return Nothing
+    End Function
+
+    Public Overrides Function GetMetadata() As AssemblyMetadata
         Return Nothing
     End Function
 End Class

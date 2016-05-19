@@ -9,8 +9,6 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using Microsoft.CodeAnalysis.Text;
@@ -50,7 +48,7 @@ namespace Microsoft.CodeAnalysis.Scripting.Hosting
             ErrorLogger errorLogger = null;
             if (_compiler.Arguments.ErrorLogPath != null)
             {
-                errorLogger = _compiler.GetErrorLogger(_console.Out, CancellationToken.None);
+                errorLogger = _compiler.GetErrorLogger(_console.Error, CancellationToken.None);
                 if (errorLogger == null)
                 {
                     return CommonCompiler.Failed;
@@ -108,7 +106,7 @@ namespace Microsoft.CodeAnalysis.Scripting.Hosting
             var scriptOptions = GetScriptOptions(_compiler.Arguments, scriptPathOpt, _compiler.MessageProvider, diagnosticsInfos);
 
             var errors = _compiler.Arguments.Errors.Concat(diagnosticsInfos.Select(Diagnostic.Create));
-            if (_compiler.ReportErrors(errors, _console.Out, errorLogger))
+            if (_compiler.ReportErrors(errors, _console.Error, errorLogger))
             {
                 return CommonCompiler.Failed;
             }
@@ -141,7 +139,7 @@ namespace Microsoft.CodeAnalysis.Scripting.Hosting
             }
 
             return new ScriptOptions(
-                filePath: scriptPathOpt ?? "", 
+                filePath: scriptPathOpt ?? "",
                 references: ImmutableArray.CreateRange(resolvedReferences),
                 namespaces: CommandLineHelpers.GetImports(arguments),
                 metadataResolver: metadataResolver,
@@ -178,7 +176,7 @@ namespace Microsoft.CodeAnalysis.Scripting.Hosting
             }
             catch (CompilationErrorException e)
             {
-                _compiler.ReportErrors(e.Diagnostics, _console.Out, errorLogger);
+                _compiler.ReportErrors(e.Diagnostics, _console.Error, errorLogger);
                 return CommonCompiler.Failed;
             }
         }
@@ -276,14 +274,14 @@ namespace Microsoft.CodeAnalysis.Scripting.Hosting
             {
                 var task = (state == null) ?
                     newScript.RunAsync(globals, cancellationToken) :
-                    newScript.ContinueAsync(state, cancellationToken);
+                    newScript.RunFromAsync(state, cancellationToken);
 
                 state = task.GetAwaiter().GetResult();
             }
             catch (FileLoadException e) when (e.InnerException is InteractiveAssemblyLoaderException)
             {
                 _console.ForegroundColor = ConsoleColor.Red;
-                _console.Out.WriteLine(e.InnerException.Message);
+                _console.Error.WriteLine(e.InnerException.Message);
                 _console.ResetColor();
 
                 return false;
@@ -326,65 +324,12 @@ namespace Microsoft.CodeAnalysis.Scripting.Hosting
             try
             {
                 _console.ForegroundColor = ConsoleColor.Red;
-                _console.Out.WriteLine(e.Message);
-
-                _console.ForegroundColor = ConsoleColor.DarkRed;
-
-                var trace = new StackTrace(e, needFileInfo: true);
-                foreach (var frame in trace.GetFrames())
-                {
-                    if (!frame.HasMethod())
-                    {
-                        continue;
-                    }
-
-                    var method = frame.GetMethod();
-                    var type = method.DeclaringType;
-
-                    if (type == typeof(CommandLineRunner))
-                    {
-                        break;
-                    }
-
-                    string methodDisplay = _objectFormatter.FormatMethodSignature(method);
-
-                    // TODO: we don't want to include awaiter helpers, shouldn't they be marked by DebuggerHidden in FX?
-                    if (methodDisplay == null || IsTaskAwaiter(type) || IsTaskAwaiter(type.DeclaringType))
-                    {
-                        continue;
-                    }
-
-                    _console.Out.Write("  + ");
-                    _console.Out.Write(methodDisplay);
-
-                    if (frame.HasSource())
-                    {
-                        _console.Out.Write(string.Format(CultureInfo.CurrentUICulture, ScriptingResources.AtFileLine, frame.GetFileName(), frame.GetFileLineNumber()));
-                    }
-
-                    _console.Out.WriteLine();
-                }
+                _console.Error.Write(_objectFormatter.FormatException(e));
             }
             finally
             {
                 _console.ResetColor();
             }
-        }
-
-        private static bool IsTaskAwaiter(Type type)
-        {
-            if (type == typeof(TaskAwaiter) || type == typeof(ConfiguredTaskAwaitable))
-            {
-                return true;
-            }
-
-            if (type?.GetTypeInfo().IsGenericType == true)
-            {
-                var genericDef = type.GetTypeInfo().GetGenericTypeDefinition();
-                return genericDef == typeof(TaskAwaiter<>) || type == typeof(ConfiguredTaskAwaitable<>);
-            }
-
-            return false;
         }
 
         private static bool IsHelpCommand(string text)
@@ -405,7 +350,7 @@ namespace Microsoft.CodeAnalysis.Scripting.Hosting
             const int MaxDisplayCount = 5;
 
             var errorsAndWarnings = diagnostics.ToArray();
-           
+
             // by severity, then by location
             var ordered = errorsAndWarnings.OrderBy((d1, d2) =>
             {
@@ -418,14 +363,14 @@ namespace Microsoft.CodeAnalysis.Scripting.Hosting
                 foreach (var diagnostic in ordered.Take(MaxDisplayCount))
                 {
                     _console.ForegroundColor = (diagnostic.Severity == DiagnosticSeverity.Error) ? ConsoleColor.Red : ConsoleColor.Yellow;
-                    _console.Out.WriteLine(diagnostic.ToString());
+                    _console.Error.WriteLine(diagnostic.ToString());
                 }
 
                 if (errorsAndWarnings.Length > MaxDisplayCount)
                 {
                     int notShown = errorsAndWarnings.Length - MaxDisplayCount;
                     _console.ForegroundColor = ConsoleColor.DarkRed;
-                    _console.Out.WriteLine(string.Format((notShown == 1) ? ScriptingResources.PlusAdditionalError : ScriptingResources.PlusAdditionalError, notShown));
+                    _console.Error.WriteLine(string.Format((notShown == 1) ? ScriptingResources.PlusAdditionalError : ScriptingResources.PlusAdditionalError, notShown));
                 }
             }
             finally

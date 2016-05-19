@@ -14,8 +14,6 @@
     <OutputType>Library</OutputType>
     <RootNamespace>Microsoft.CodeAnalysis.Editor</RootNamespace>
     <AssemblyName>Microsoft.CodeAnalysis.EditorFeatures</AssemblyName>
-    <!-- Disable the architecture mismatch warning -->
-    <ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>None</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <CopyNuGetImplementations>false</CopyNuGetImplementations>
   </PropertyGroup>
@@ -23,6 +21,14 @@
     <ProjectReference Include="..\..\Compilers\Core\Portable\CodeAnalysis.csproj">
       <Project>{1EE8CAD3-55F9-4D91-96B2-084641DA9A6C}</Project>
       <Name>CodeAnalysis</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Dependencies\Immutable\Immutable.csproj">
+      <Project>{DCDA908D-EF5E-494B-ADDC-C26F5FD610CA}</Project>
+      <Name>Immutable</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Dependencies\VisualStudioEditor\VisualStudioEditor.csproj">
+      <Project>{ef986d9b-8cfc-4ecb-9729-e260a1f84aff}</Project>
+      <Name>VisualStudioEditor</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Workspaces\Core\Desktop\Workspaces.Desktop.csproj">
       <Project>{2e87fa96-50bb-4607-8676-46521599f998}</Project>
@@ -53,36 +59,6 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.VisualStudio.CoreUtility, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.ImageCatalog, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <Reference Include="Microsoft.VisualStudio.Imaging, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <Reference Include="Microsoft.VisualStudio.Imaging.Interop.14.0.DesignTime, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <EmbedInteropTypes>true</EmbedInteropTypes>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Language.CallHierarchy, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <Reference Include="Microsoft.VisualStudio.Language.Intellisense, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Language.NavigateTo.Interfaces, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <Reference Include="Microsoft.VisualStudio.Language.StandardClassification, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Platform.VSEditor, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <Reference Include="Microsoft.VisualStudio.Text.Data, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Text.Internal, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <Reference Include="Microsoft.VisualStudio.Text.Logic, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Text.UI, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Text.UI.Wpf, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>false</Private>
-    </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
     <Reference Include="System" />
@@ -99,12 +75,14 @@
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="InteractiveHost" />
+    <InternalsVisibleTo Include="Microsoft.CodeAnalysis.EditorFeatures.Next" />
     <InternalsVisibleTo Include="Microsoft.CodeAnalysis.CSharp.EditorFeatures" />
     <InternalsVisibleTo Include="Microsoft.CodeAnalysis.VisualBasic.EditorFeatures" />
     <InternalsVisibleTo Include="Microsoft.VisualStudio.LanguageServices" />
     <InternalsVisibleTo Include="Microsoft.VisualStudio.LanguageServices.CSharp" />
     <InternalsVisibleTo Include="Microsoft.VisualStudio.LanguageServices.Implementation" />
     <InternalsVisibleTo Include="Microsoft.VisualStudio.LanguageServices.SolutionExplorer" />
+    <InternalsVisibleTo Include="Microsoft.VisualStudio.LanguageServices.Telemetry" />
     <InternalsVisibleTo Include="Microsoft.VisualStudio.LanguageServices.VisualBasic" />
     <InternalsVisibleTo Include="csi" />
     <InternalsVisibleTo Include="Microsoft.CodeAnalysis.CSharp.InteractiveEditorFeatures" />
@@ -126,6 +104,7 @@
     <InternalsVisibleToTest Include="Roslyn.Test.Utilities.Desktop" />
     <InternalsVisibleToTest Include="Roslyn.VisualStudio.CSharp.UnitTests" />
     <InternalsVisibleToTest Include="Roslyn.VisualStudio.Services.UnitTests" />
+    <InternalsVisibleToTest Include="Roslyn.VisualStudio.Test.Utilities" />
     <!-- Eventually a bunch of these unit tests should move into Roslyn.Services.Implementation.UnitTests
          and this should be removed. -->
     <InternalsVisibleToTest Include="RoslynETAHost" />
@@ -134,6 +113,7 @@
     <InternalsVisibleToTypeScript Include="Microsoft.VisualStudio.LanguageServices.TypeScript" />
     <InternalsVisibleToTypeScript Include="Microsoft.Test.Apex.VisualStudio" />
     <InternalsVisibleToTypeScript Include="Roslyn.Services.Editor.TypeScript.UnitTests" />
+    <InternalsVisibleToFSharp Include="FSharp.Editor" />
     <InternalsVisibleToMoq Include="DynamicProxyGenAssembly2" />
   </ItemGroup>
   <ItemGroup>
@@ -141,7 +121,9 @@
     <Compile Include="CommandHandlers\AbstractCompletionCommandHandler.cs" />
     <Compile Include="CommandHandlers\AbstractIntelliSenseCommandHandler.cs" />
     <Compile Include="CommandHandlers\CompletionCommandHandler.cs" />
+    <Compile Include="CommandHandlers\ExecuteInInteractiveCommandHandler.cs" />
     <Compile Include="CommandHandlers\GoToAdjacentMemberCommandHandler.cs" />
+    <Compile Include="CommandHandlers\IExecuteInInteractiveCommandHandler.cs" />
     <Compile Include="CommandHandlers\IntelliSenseCommandHandler.cs" />
     <Compile Include="CommandHandlers\InteractivePasteCommandHandler.cs" />
     <Compile Include="CommandHandlers\QuickInfoCommandHandlerAndSourceProvider.cs" />
@@ -200,6 +182,7 @@
     <Compile Include="Commands\SortAndRemoveUnnecessaryImportsCommandArgs.cs" />
     <Compile Include="Commands\SortImportsCommandArgs.cs" />
     <Compile Include="Commands\SurroundWithCommandArgs.cs" />
+    <Compile Include="Commands\SyncClassViewCommandArgs.cs" />
     <Compile Include="Commands\TabKeyCommandArgs.cs" />
     <Compile Include="Commands\ToggleCompletionModeCommandArgs.cs" />
     <Compile Include="Commands\TypeCharCommandArgs.cs" />
@@ -219,18 +202,20 @@
       <DesignTime>True</DesignTime>
     </Compile>
     <Compile Include="ExportContentTypeLanguageServiceAttribute.cs" />
+    <Compile Include="Extensibility\BraceMatching\AbstractDirectiveTriviaBraceMatcher.cs" />
     <Compile Include="Extensibility\BraceMatching\ExportBraceMatcherAttribute.cs" />
     <Compile Include="Extensibility\BraceMatching\IBraceMatcher.cs" />
     <Compile Include="Extensibility\Commands\ExportCommandHandlerAttribute.cs" />
+    <Compile Include="Extensibility\Commands\ExportInteractiveCommandAttribute.cs" />
     <Compile Include="Extensibility\Commands\ICommandHandler.cs" />
     <Compile Include="Extensibility\Commands\PredefinedCommandHandlerNames.cs" />
-    <Compile Include="Extensibility\Completion\CompletionItemEventArgs.cs" />
+    <Compile Include="Extensibility\Completion\PresentationItemEventArgs.cs" />
+    <Compile Include="Extensibility\Completion\CompletionItemFilterStateChangedEventArgs.cs" />
     <Compile Include="Extensibility\Completion\ExportCompletionProviderAttribute.cs" />
     <Compile Include="Extensibility\Completion\IAsyncCompletionService.cs" />
     <Compile Include="Extensibility\Completion\ICompletionPresenterSession.cs" />
     <Compile Include="Extensibility\Completion\ICustomCommitCompletionProvider.cs" />
-    <Compile Include="Extensibility\Completion\ICustomCompletionItemFormatter.cs" />
-    <Compile Include="Extensibility\Completion\SnippetCompletionProvider.cs" />
+    <Compile Include="Extensibility\Completion\PresentationItem.cs" />
     <Compile Include="Extensibility\Completion\PredefinedCompletionPresenterNames.cs" />
     <Compile Include="Extensibility\Completion\PredefinedCompletionProviderNames.cs" />
     <Compile Include="Extensibility\Completion\PredefinedCompletionRulesFactoryNames.cs" />
@@ -238,6 +223,8 @@
     <Compile Include="Extensibility\Composition\IContentTypeMetadata.cs" />
     <Compile Include="Extensibility\Composition\OrderableContentTypeMetadata.cs" />
     <Compile Include="Extensibility\Composition\OrderableLanguageAndRoleMetadata.cs" />
+    <Compile Include="Extensibility\Composition\VisualStudioVersionMetadata.cs" />
+    <Compile Include="Extensibility\ExportVersionSpecificAttribute.cs" />
     <Compile Include="Extensibility\Highlighting\ExportHighlighterAttribute.cs" />
     <Compile Include="Extensibility\Highlighting\IHighlighter.cs" />
     <Compile Include="Extensibility\NavigationBar\AbstractNavigationBarItemService.cs" />
@@ -266,23 +253,31 @@
     <Compile Include="Extensibility\QuickInfo\PredefinedQuickInfoPresenterNames.cs" />
     <Compile Include="Extensibility\QuickInfo\PredefinedQuickInfoProviderNames.cs" />
     <Compile Include="Extensibility\QuickInfo\QuickInfoItem.cs" />
-    <Compile Include="Extensibility\SignatureHelp\ExportSignatureHelpProviderAttribute.cs" />
     <Compile Include="Extensibility\SignatureHelp\ISignatureHelpPresenterSession.cs" />
-    <Compile Include="Extensibility\SignatureHelp\ISignatureHelpProvider.cs" />
     <Compile Include="Extensibility\SignatureHelp\PredefinedSignatureHelpPresenterNames.cs" />
-    <Compile Include="Extensibility\SignatureHelp\SignatureHelpState.cs" />
-    <Compile Include="Extensibility\SignatureHelp\SignatureHelpItems.cs" />
-    <Compile Include="Extensibility\SignatureHelp\SignatureHelpItem.cs" />
     <Compile Include="Extensibility\SignatureHelp\SignatureHelpItemEventArgs.cs" />
-    <Compile Include="Extensibility\SignatureHelp\SignatureHelpParameter.cs" />
-    <Compile Include="Extensibility\SignatureHelp\SignatureHelpTriggerInfo.cs" />
-    <Compile Include="Extensibility\SignatureHelp\SignatureHelpTriggerReason.cs" />
+    <Compile Include="Extensibility\VersionSelector.cs" />
     <Compile Include="Implementation\Classification\SemanticClassificationBufferTaggerProvider.cs" />
     <Compile Include="Implementation\Classification\SemanticClassificationBufferTaggerProvider.Tagger.cs" />
     <Compile Include="Implementation\Classification\SemanticClassificationUtilities.cs" />
+    <Compile Include="Implementation\CodeFixes\CodeFixService.cs" />
+    <Compile Include="Implementation\CodeFixes\CodeFixService.ProjectCodeFixProvider.cs" />
+    <Compile Include="Implementation\CodeFixes\ICodeFixService.cs" />
     <Compile Include="Implementation\GoToImplementation\AbstractGoToImplementationService.cs" />
     <Compile Include="Implementation\GoToImplementation\IGoToImplementationService.cs" />
+    <Compile Include="Implementation\Intellisense\Completion\BraceCompletionMetadata.cs" />
+    <Compile Include="Extensibility\Completion\CompletionHelper.cs" />
+    <Compile Include="Extensibility\Completion\CompletionHelperFactory.cs" />
     <Compile Include="Implementation\Intellisense\Completion\OptionSetExtensions.cs" />
+    <Compile Include="Implementation\Intellisense\Completion\Presentation\ClassificationTags.cs" />
+    <Compile Include="Implementation\Intellisense\Completion\Presentation\ImageMonikers.cs" />
+    <Compile Include="Implementation\Intellisense\Completion\SimplePresentationItem.cs" />
+    <Compile Include="Implementation\Intellisense\Completion\Presentation\ICompletionSetFactory.cs" />
+    <Compile Include="Implementation\Intellisense\Completion\Presentation\RoslynCompletionSet.cs" />
+    <Compile Include="Implementation\Intellisense\Completion\Presentation\ICompletionSet.cs" />
+    <Compile Include="Implementation\Intellisense\Completion\Presentation\VisualStudio14CompletionSetFactory.cs" />
+    <Compile Include="Implementation\Interactive\IAbstractResetInteractiveCommand.cs" />
+    <Compile Include="Implementation\Outlining\AbstractSyntaxOutliner.cs" />
     <Compile Include="Implementation\Outlining\InvalidOutliningRegionException.cs" />
     <Compile Include="Implementation\Suggestions\FixMultipleOccurrencesService.cs" />
     <Compile Include="Implementation\Suggestions\FixMultipleSuggestedAction.cs" />
@@ -317,6 +312,7 @@
     <Compile Include="Implementation\AutomaticCompletion\BraceCompletionSessionProvider.BraceCompletionSession.cs" />
     <Compile Include="Implementation\AutomaticCompletion\IEditorBraceCompletionSession.cs" />
     <Compile Include="Implementation\AutomaticCompletion\Sessions\AbstractTokenBraceCompletionSession.cs" />
+    <Compile Include="Implementation\BlockCommentEditing\AbstractBlockCommentEditingCommandHandler.cs" />
     <Compile Include="Implementation\BraceMatching\AbstractBraceMatcher.cs" />
     <Compile Include="Implementation\BraceMatching\BraceCharacterAndKind.cs" />
     <Compile Include="Implementation\BraceMatching\BraceHighlightingViewTaggerProvider.cs" />
@@ -366,7 +362,6 @@
     <Compile Include="Implementation\Diagnostics\ClassificationTypeDefinitions.cs" />
     <Compile Include="Implementation\Diagnostics\DiagnosticsClassificationTaggerProvider.cs" />
     <Compile Include="Implementation\Diagnostics\DiagnosticsSquiggleTaggerProvider.cs" />
-    <Compile Include="Implementation\Diagnostics\WellKnownDiagnosticPropertyNames.cs" />
     <Compile Include="Implementation\DocumentationComments\AbstractDocumentationCommentCommandHandler.cs" />
     <Compile Include="Implementation\DocumentationComments\AbstractXmlTagCompletionCommandHandler.cs" />
     <Compile Include="Implementation\EditAndContinue\ActiveStatementTag.cs" />
@@ -400,12 +395,9 @@
     <Compile Include="Implementation\GoToDefinition\GoToDefinitionCommandHandler.cs" />
     <Compile Include="Implementation\GoToDefinition\GoToDefinitionHelpers.cs" />
     <Compile Include="Implementation\GoToDefinition\IGoToDefinitionService.cs" />
-    <Compile Include="Implementation\Intellisense\Completion\CompletionProviders\MemberInsertingCompletionItemRules.cs" />
-    <Compile Include="Implementation\Intellisense\Completion\CompletionProviders\XmlDocCommentCompletion\AbstractXmlDocCommentCompletionItemRules.cs" />
     <Compile Include="Implementation\Intellisense\Completion\FileSystem\CurrentWorkingDirectoryDiscoveryService.cs" />
     <Compile Include="Implementation\Intellisense\Completion\FileSystem\FileSystemCompletionHelper.cs" />
     <Compile Include="Implementation\Intellisense\Completion\FileSystem\ICurrentWorkingDirectoryDiscoveryService.cs" />
-    <Compile Include="Implementation\Intellisense\Completion\FileSystem\IOUtilities.cs" />
     <Compile Include="Implementation\Intellisense\Completion\FileSystem\PathCompletionUtilities.cs" />
     <Compile Include="Implementation\KeywordHighlighting\AbstractKeywordHighlighter.cs" />
     <Compile Include="Implementation\KeywordHighlighting\HighlighterViewTaggerProvider.cs" />
@@ -460,13 +452,6 @@
     <Compile Include="Implementation\InlineRename\TrackingSpanIntrospector.cs" />
     <Compile Include="Implementation\InlineRename\UndoManagerServiceFactory.cs" />
     <Compile Include="Implementation\Intellisense\Completion\AsyncCompletionService.cs" />
-    <Compile Include="Implementation\Intellisense\Completion\CompletionProviders\AbstractMemberInsertingCompletionProvider.cs" />
-    <Compile Include="Implementation\Intellisense\Completion\CompletionProviders\AbstractOverrideCompletionProvider.cs" />
-    <Compile Include="Implementation\Intellisense\Completion\CompletionProviders\AbstractOverrideCompletionProvider.ItemGetter.cs" />
-    <Compile Include="Implementation\Intellisense\Completion\CompletionProviders\AbstractPartialCompletionProvider.cs" />
-    <Compile Include="Implementation\Intellisense\Completion\CompletionProviders\MemberInsertingCompletionItem.cs" />
-    <Compile Include="Implementation\Intellisense\Completion\CompletionProviders\XmlDocCommentCompletion\AbstractDocCommentCompletionProvider.cs" />
-    <Compile Include="Implementation\Intellisense\Completion\CompletionProviders\XmlDocCommentCompletion\XmlDocCommentCompletionItem.cs" />
     <Compile Include="Implementation\Intellisense\Completion\Controller.cs" />
     <Compile Include="Implementation\Intellisense\Completion\Controller.Session.cs" />
     <Compile Include="Implementation\Intellisense\Completion\Controller.Session_ComputeModel.cs" />
@@ -491,11 +476,10 @@
     <Compile Include="Implementation\Intellisense\Completion\Controller_TabKey.cs" />
     <Compile Include="Implementation\Intellisense\Completion\Controller_ToggleCompletionMode.cs" />
     <Compile Include="Implementation\Intellisense\Completion\Controller_TypeChar.cs" />
-    <Compile Include="Implementation\Intellisense\Completion\DescriptionModifyingCompletionItem.cs" />
+    <Compile Include="Implementation\Intellisense\Completion\DescriptionModifyingPresentationItem.cs" />
     <Compile Include="Implementation\Intellisense\Completion\Model.cs" />
     <Compile Include="Implementation\Intellisense\Completion\Presentation\CompletionPresenter.cs" />
     <Compile Include="Implementation\Intellisense\Completion\Presentation\CompletionPresenterSession.cs" />
-    <Compile Include="Implementation\Intellisense\Completion\Presentation\CompletionSet2.cs" />
     <Compile Include="Implementation\Intellisense\Completion\Presentation\CompletionSource.cs" />
     <Compile Include="Implementation\Intellisense\Completion\Presentation\CustomCommitCompletion.cs" />
     <Compile Include="Implementation\Intellisense\Completion\Presentation\ToolTipProvider.cs" />
@@ -523,9 +507,6 @@
     <Compile Include="Implementation\Intellisense\QuickInfo\Providers\AbstractSemanticQuickInfoProvider.SymbolComparer.cs" />
     <Compile Include="Implementation\Intellisense\QuickInfo\Providers\DocumentationCommentDeferredContent.cs" />
     <Compile Include="Implementation\Intellisense\QuickInfo\Providers\QuickInfoDisplayPanel.cs" />
-    <Compile Include="Implementation\Intellisense\SignatureHelp\AbstractSignatureHelpProvider.cs" />
-    <Compile Include="Implementation\Intellisense\SignatureHelp\AbstractSignatureHelpProvider.SymbolKeySignatureHelpItem.cs" />
-    <Compile Include="Implementation\Intellisense\SignatureHelp\CommonSignatureHelpUtilities.cs" />
     <Compile Include="Implementation\Intellisense\SignatureHelp\Controller.cs" />
     <Compile Include="Implementation\Intellisense\SignatureHelp\Controller.Session.cs" />
     <Compile Include="Implementation\Intellisense\SignatureHelp\Controller.Session_ComputeModel.cs" />
@@ -663,6 +644,8 @@
     <Compile Include="Implementation\Workspaces\TextUndoHistoryWorkspaceServiceFactoryService.cs" />
     <Compile Include="Implementation\Workspaces\WorkspaceTaskSchedulerFactoryFactory.cs" />
     <Compile Include="IRefactorNotifyService.cs" />
+    <Compile Include="Shared\IImageMonikerService.cs" />
+    <Compile Include="Shared\DefaultImageMonikerService.cs" />
     <Compile Include="Shared\Tagging\EventSources\TaggerEventSources.ViewSpanChangedEventSource.cs" />
     <Compile Include="Shared\Utilities\SynchronizationContextTaskScheduler.cs" />
     <Compile Include="Tagging\AbstractAsynchronousTaggerProvider.Tagger.cs" />
@@ -725,11 +708,10 @@
     <Compile Include="Shared\Preview\PreviewSolutionCrawlerRegistrationService.cs" />
     <Compile Include="Shared\Preview\PredefinedPreviewTaggerKeys.cs" />
     <Compile Include="Shared\Preview\PreviewWorkspace.cs" />
-    <Compile Include="Shared\IDocumentSupportsSuggestionService.cs" />
+    <Compile Include="Shared\IDocumentSupportsFeatureService.cs" />
     <Compile Include="Shared\Tagging\EventSources\AbstractTaggerEventSource.cs" />
     <Compile Include="Shared\Tagging\EventSources\AbstractWorkspaceTrackingTaggerEventSource.cs" />
     <Compile Include="Shared\Tagging\EventSources\TaggerEventSources.WorkspaceRegistrationChangedEventSource.cs" />
-    <Compile Include="Shared\Utilities\BrushToColorConverter.cs" />
     <Compile Include="Shared\Utilities\CodeAnalysisColors.cs" />
     <Compile Include="Shared\Utilities\HighContrastChecker.cs" />
     <Compile Include="Tagging\ITaggerEventSource.cs" />

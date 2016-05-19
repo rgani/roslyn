@@ -1,5 +1,6 @@
 ' Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
+Imports System.Collections.Immutable
 Imports System.Threading
 Imports Microsoft.CodeAnalysis.Completion
 Imports Microsoft.CodeAnalysis.Completion.Providers
@@ -17,14 +18,14 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Completion.Providers
         Inherits AbstractSymbolCompletionProvider
 
         Protected Overrides Function GetSymbolsWorker(context As AbstractSyntaxContext, position As Integer, options As OptionSet, cancellationToken As CancellationToken) As Task(Of IEnumerable(Of ISymbol))
-            Return Task.FromResult(Recommender.GetRecommendedSymbolsAtPosition(context.SemanticModel, position, context.Workspace, options, cancellationToken))
+            Return Recommender.GetRecommendedSymbolsAtPositionAsync(context.SemanticModel, position, context.Workspace, options, cancellationToken)
         End Function
 
-        Protected Overrides Function GetTextChangeSpan(text As SourceText, position As Integer) As TextSpan
-            Return CompletionUtilities.GetTextChangeSpan(text, position)
+        Protected Overrides Function GetInsertionText(symbol As ISymbol, context As AbstractSyntaxContext, ch As Char) As String
+            Return CompletionUtilities.GetInsertionTextAtInsertionTime(symbol, context, ch)
         End Function
 
-        Public Overrides Function IsTriggerCharacter(text As SourceText, characterPosition As Integer, options As OptionSet) As Boolean
+        Friend Overrides Function IsInsertionTrigger(text As SourceText, characterPosition As Integer, options As OptionSet) As Boolean
             Return CompletionUtilities.IsDefaultTriggerCharacterOrParen(text, characterPosition, options)
         End Function
 
@@ -72,7 +73,7 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Completion.Providers
 
         Protected Overrides Async Function CreateContext(document As Document, position As Integer, cancellationToken As CancellationToken) As Task(Of AbstractSyntaxContext)
             Dim semanticModel = Await document.GetSemanticModelForSpanAsync(New TextSpan(position, 0), cancellationToken).ConfigureAwait(False)
-            Return VisualBasicSyntaxContext.CreateContext(document.Project.Solution.Workspace, semanticModel, position, cancellationToken)
+            Return Await VisualBasicSyntaxContext.CreateContextAsync(document.Project.Solution.Workspace, semanticModel, position, cancellationToken).ConfigureAwait(False)
         End Function
 
         Protected Overrides Function GetFilterText(symbol As ISymbol, displayText As String, context As AbstractSyntaxContext) As String
@@ -84,8 +85,15 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Completion.Providers
             Return MyBase.GetFilterText(symbol, displayText, context)
         End Function
 
-        Protected Overrides Function GetCompletionItemRules() As CompletionItemRules
-            Return ItemRules.Instance
+        Private Shared s_importDirectiveRules As CompletionItemRules =
+            CompletionItemRules.Create(commitCharacterRules:=ImmutableArray.Create(CharacterSetModificationRule.Create(CharacterSetModificationKind.Replace, "."c)))
+
+        Protected Overrides Function GetCompletionItemRules(symbols As IReadOnlyList(Of ISymbol), context As AbstractSyntaxContext) As CompletionItemRules
+            If context.IsInImportsDirective Then
+                Return s_importDirectiveRules
+            Else
+                Return CompletionItemRules.Default
+            End If
         End Function
 
     End Class

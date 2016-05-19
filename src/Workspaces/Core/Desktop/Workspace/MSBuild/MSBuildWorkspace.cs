@@ -21,6 +21,7 @@ using Microsoft.CodeAnalysis.Host.Mef;
 using Microsoft.CodeAnalysis.Text;
 using Roslyn.Utilities;
 using System.Runtime.InteropServices;
+using Microsoft.CodeAnalysis.Shared.Utilities;
 
 namespace Microsoft.CodeAnalysis.MSBuild
 {
@@ -242,9 +243,14 @@ namespace Microsoft.CodeAnalysis.MSBuild
 
         public override bool TryApplyChanges(Solution newSolution)
         {
+            return TryApplyChanges(newSolution, new ProgressTracker());
+        }
+
+        internal override bool TryApplyChanges(Solution newSolution, IProgressTracker progressTracker)
+        {
             using (_serializationLock.DisposableWait())
             {
-                return base.TryApplyChanges(newSolution);
+                return base.TryApplyChanges(newSolution, progressTracker);
             }
         }
 
@@ -457,7 +463,7 @@ namespace Microsoft.CodeAnalysis.MSBuild
                 project = project.AddMetadataReference(metadataReference);
             }
 
-            var compilation = project.GetCompilationAsync(CancellationToken.None).WaitAndGetResult(CancellationToken.None);
+            var compilation = project.GetCompilationAsync(CancellationToken.None).WaitAndGetResult_CanCallOnBackground(CancellationToken.None);
             var symbol = compilation.GetAssemblyOrModuleSymbol(metadataReference) as IAssemblySymbol;
             return symbol != null ? symbol.Identity : null;
         }
@@ -502,5 +508,5 @@ namespace Microsoft.CodeAnalysis.MSBuild
             this.OnAnalyzerReferenceRemoved(projectId, analyzerReference);
         }
     }
-#endregion
+    #endregion
 }

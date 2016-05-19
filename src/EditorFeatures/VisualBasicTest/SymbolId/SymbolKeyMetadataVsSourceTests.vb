@@ -10,7 +10,7 @@ Namespace Microsoft.CodeAnalysis.Editor.VisualBasic.UnitTests.SymbolId
 
 #Region "Metadata vs. Source"
 
-        <WpfFact>
+        <Fact>
         Public Sub M2SNamedTypeSymbols01()
 
             Dim src1 = <compilation name="M2SNamedTypeSymbols01">
@@ -88,14 +88,14 @@ End Class
             ' 'E'
             Dim mtSym05 = (TryCast(typesym.GetMembers("Item").[Single](), IPropertySymbol)).Type
 
-            ResolveAndVerifySymbol(mtSym03, comp2, originalSymbols(0), comp1, SymbolIdComparison.CaseSensitive)
-            ResolveAndVerifySymbol(mtSym01, comp2, originalSymbols(1), comp1, SymbolIdComparison.CaseSensitive)
-            ResolveAndVerifySymbol(mtSym05, comp2, originalSymbols(2), comp1, SymbolIdComparison.CaseSensitive)
-            ResolveAndVerifySymbol(mtSym02, comp2, originalSymbols(3), comp1, SymbolIdComparison.CaseInsensitive)
-            ResolveAndVerifySymbol(mtSym04, comp2, originalSymbols(4), comp1, SymbolIdComparison.CaseInsensitive)
+            ResolveAndVerifySymbol(mtSym03, originalSymbols(0), comp1, SymbolIdComparison.CaseSensitive)
+            ResolveAndVerifySymbol(mtSym01, originalSymbols(1), comp1, SymbolIdComparison.CaseSensitive)
+            ResolveAndVerifySymbol(mtSym05, originalSymbols(2), comp1, SymbolIdComparison.CaseSensitive)
+            ResolveAndVerifySymbol(mtSym02, originalSymbols(3), comp1, SymbolIdComparison.CaseInsensitive)
+            ResolveAndVerifySymbol(mtSym04, originalSymbols(4), comp1, SymbolIdComparison.CaseInsensitive)
         End Sub
 
-        <WpfFact>
+        <Fact>
         Public Sub M2SNonTypeMemberSymbols01()
 
             Dim src1 = <compilation name="M2SNonTypeMemberSymbols01">
@@ -182,7 +182,7 @@ End Class
 
 #Region "Metadata vs. Metadata"
 
-        <WpfFact>
+        <Fact>
         Public Sub M2MMultiTargetingMsCorLib01()
 
             Dim src1 = <compilation name="M2MMultiTargetingMsCorLib01">
@@ -245,18 +245,18 @@ End Class
             Dim localSymbols = ver40Symbols.OrderBy(Function(s) s.Name).[Select](Function(s) DirectCast(s, ILocalSymbol)).ToList()
 
             ' a
-            ResolveAndVerifySymbol(localSymbols(0).Type, comp40, typeA, comp20, SymbolIdComparison.CaseInsensitive)
+            ResolveAndVerifySymbol(localSymbols(0).Type, typeA, comp20, SymbolIdComparison.CaseInsensitive)
             ' ary
-            ResolveAndVerifySymbol(localSymbols(1).Type, comp40, DirectCast(ver20Symbols(0), IParameterSymbol).Type, comp20, SymbolIdComparison.CaseInsensitive)
+            ResolveAndVerifySymbol(localSymbols(1).Type, DirectCast(ver20Symbols(0), IParameterSymbol).Type, comp20, SymbolIdComparison.CaseInsensitive)
             ' dt
-            ResolveAndVerifySymbol(localSymbols(2).Type, comp40, DirectCast(ver20Symbols(4), IParameterSymbol).Type, comp20, SymbolIdComparison.CaseInsensitive)
+            ResolveAndVerifySymbol(localSymbols(2).Type, DirectCast(ver20Symbols(4), IParameterSymbol).Type, comp20, SymbolIdComparison.CaseInsensitive)
             ' fi
-            ResolveAndVerifySymbol(localSymbols(3).Type, comp40, DirectCast(ver20Symbols(1), IMethodSymbol).ReturnType, comp20, SymbolIdComparison.CaseInsensitive)
+            ResolveAndVerifySymbol(localSymbols(3).Type, DirectCast(ver20Symbols(1), IMethodSymbol).ReturnType, comp20, SymbolIdComparison.CaseInsensitive)
 
         End Sub
 
-        <WorkItem(542725)>
-        <WpfFact>
+        <WorkItem(542725, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/542725")>
+        <Fact>
         Public Sub M2MMultiTargetingMsCorLib02()
 
             Dim src1 = <compilation name="M2MMultiTargetingMsCorLib02">
@@ -330,8 +330,8 @@ End Class
 
         End Sub
 
-        <WorkItem(542992)>
-        <WpfFact>
+        <WorkItem(542992, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/542992")>
+        <Fact>
         Public Sub M2MMultiTargetingMsCorLib03()
 
             Dim src1 = <compilation name="M2MMultiTargetingMsCorLib03">

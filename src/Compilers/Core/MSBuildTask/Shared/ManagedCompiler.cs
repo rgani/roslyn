@@ -103,6 +103,12 @@ namespace Microsoft.CodeAnalysis.BuildTasks
             get { return _store.GetOrDefault(nameof(Deterministic), false); }
         }
 
+        public bool PublicSign
+        {
+            set { _store[nameof(PublicSign)] = value; }
+            get { return _store.GetOrDefault(nameof(PublicSign), false); }
+        }
+
         public bool EmitDebugInformation
         {
             set { _store[nameof(EmitDebugInformation)] = value; }
@@ -222,6 +228,12 @@ namespace Microsoft.CodeAnalysis.BuildTasks
         {
             set { _store[nameof(Resources)] = value; }
             get { return (ITaskItem[])_store[nameof(Resources)]; }
+        }
+
+        public string RuntimeMetadataVersion
+        {
+            set { _store[nameof(RuntimeMetadataVersion)] = value; }
+            get { return (string)_store[nameof(RuntimeMetadataVersion)]; }
         }
 
         public ITaskItem[] ResponseFiles
@@ -366,8 +378,19 @@ namespace Microsoft.CodeAnalysis.BuildTasks
                     CompilerServerLogger.Log($"CommandLine = '{commandLineCommands}'");
                     CompilerServerLogger.Log($"BuildResponseFile = '{responseFileCommands}'");
 
+                    // Try to get the location of the user-provided build client and server,
+                    // which should be located next to the build task. If not, fall back to
+                    // "pathToTool", which is the compiler in the MSBuild default bin directory.
+                    var clientDir = TryGetClientDir() ?? Path.GetDirectoryName(pathToTool);
+                    pathToTool = Path.Combine(clientDir, ToolExe);
+
+                    // Note: we can't change the "tool path" printed to the console when we run
+                    // the Csc/Vbc task since MSBuild logs it for us before we get here. Instead,
+                    // we'll just print our own message that contains the real client location
+                    Log.LogMessage(ErrorString.UsingSharedCompilation, clientDir);
+
                     var buildPaths = new BuildPaths(
-                        clientDir: TryGetClientDir() ?? Path.GetDirectoryName(pathToTool),
+                        clientDir: clientDir,
                         // MSBuild doesn't need the .NET SDK directory
                         sdkDir: null,
                         workingDir: CurrentDirectoryToUse());
@@ -389,6 +412,8 @@ namespace Microsoft.CodeAnalysis.BuildTasks
                     }
                     else
                     {
+                        Log.LogMessage(ErrorString.SharedCompilationFallback, pathToTool);
+
                         ExitCode = base.ExecuteTool(pathToTool, responseFileCommands, commandLineCommands);
                     }
                 }
@@ -511,6 +536,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
 
                     return completedResponse.ReturnCode;
 
+                case BuildResponse.ResponseType.Rejected:
                 case BuildResponse.ResponseType.AnalyzerInconsistency:
                     return base.ExecuteTool(pathToTool, responseFileCommands, commandLineCommands);
 
@@ -645,7 +671,6 @@ namespace Microsoft.CodeAnalysis.BuildTasks
             commandLine.AppendWhenTrue("/nologo", _store, nameof(NoLogo));
             commandLine.AppendWhenTrue("/nowin32manifest", _store, nameof(NoWin32Manifest));
             commandLine.AppendPlusOrMinusSwitch("/optimize", _store, nameof(Optimize));
-            commandLine.AppendPlusOrMinusSwitch("/deterministic", _store, nameof(Deterministic));
             commandLine.AppendSwitchIfNotNull("/pathmap:", PathMap);
             commandLine.AppendSwitchIfNotNull("/out:", OutputAssembly);
             commandLine.AppendSwitchIfNotNull("/ruleset:", CodeAnalysisRuleSet);
@@ -660,12 +685,21 @@ namespace Microsoft.CodeAnalysis.BuildTasks
             commandLine.AppendSwitchIfNotNull("/win32icon:", Win32Icon);
             commandLine.AppendSwitchIfNotNull("/win32manifest:", Win32Manifest);
 
-            AddFeatures(commandLine, Features);
+            AddResponseFileCommandsForSwitchesSinceInitialReleaseThatAreNeededByTheHost(commandLine);
             AddAnalyzersToCommandLine(commandLine, Analyzers);
             AddAdditionalFilesToCommandLine(commandLine);
 
             // Append the sources.
             commandLine.AppendFileNamesIfNotNull(Sources, " ");
+        }
+
+        internal void AddResponseFileCommandsForSwitchesSinceInitialReleaseThatAreNeededByTheHost(CommandLineBuilderExtension commandLine)
+        {
+            commandLine.AppendPlusOrMinusSwitch("/deterministic", _store, nameof(Deterministic));
+            commandLine.AppendPlusOrMinusSwitch("/publicsign", _store, nameof(PublicSign));
+            commandLine.AppendSwitchIfNotNull("/runtimemetadataversion:", RuntimeMetadataVersion);
+
+            AddFeatures(commandLine, Features);
         }
 
         /// <summary>
@@ -901,6 +935,19 @@ namespace Microsoft.CodeAnalysis.BuildTasks
             }
         }
 
+        internal void InitializeHostObjectSupportForNewSwitches(ITaskHost hostObject, ref string param)
+        {
+            var compilerOptionsHostObject = hostObject as ICompilerOptionsHostObject;
+
+            if (compilerOptionsHostObject != null)
+            {
+                var commandLineBuilder = new CommandLineBuilderExtension();
+                AddResponseFileCommandsForSwitchesSinceInitialReleaseThatAreNeededByTheHost(commandLineBuilder);
+                param = "CompilerOptions";
+                CheckHostObjectSupport(param, compilerOptionsHostObject.SetCompilerOptions(commandLineBuilder.ToString()));
+            }
+        }
+
         /// <summary>
         /// Checks to see whether all of the passed-in references exist on disk before we launch the compiler.
         /// </summary>
@@ -963,7 +1010,18 @@ namespace Microsoft.CodeAnalysis.BuildTasks
                         string pathToDefaultManifest = ToolLocationHelper.GetPathToDotNetFrameworkFile
                                                        (
                                                            "default.win32manifest",
-                                                           TargetDotNetFrameworkVersion.VersionLatest
+
+                                                           // We are choosing to pass Version46 instead of VersionLatest. TargetDotNetFrameworkVersion
+                                                           // is an enum, and VersionLatest is not some sentinel value but rather a constant that is
+                                                           // equal to the highest version defined in the enum. Enum values, being constants, are baked
+                                                           // into consuming assembly, so specifying VersionLatest means not the latest version wherever
+                                                           // this code is running, but rather the latest version of the framework according to the
+                                                           // reference assembly with which this assembly was built. As of this writing, we are building
+                                                           // our bits on machines with Visual Studio 2015 that know about 4.6.1, so specifying
+                                                           // VersionLatest would bake in the enum value for 4.6.1. But we need to run on machines with
+                                                           // MSBuild that only know about Version46 (and no higher), so VersionLatest will fail there.
+                                                           // Explicitly passing Version46 prevents this problem.
+                                                           TargetDotNetFrameworkVersion.Version46
                                                        );
 
                         if (null == pathToDefaultManifest)

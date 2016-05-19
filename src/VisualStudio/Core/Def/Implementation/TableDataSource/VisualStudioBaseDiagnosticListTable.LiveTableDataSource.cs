@@ -11,7 +11,6 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Common;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Diagnostics.EngineV1;
-using Microsoft.CodeAnalysis.Editor.Implementation.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 using Microsoft.VisualStudio.Imaging.Interop;
 using Microsoft.VisualStudio.Shell.TableControl;
@@ -124,14 +123,14 @@ namespace Microsoft.VisualStudio.LanguageServices.Implementation.TableDataSource
                     return GetItemKey(data);
                 }
 
-                var argumentKey = args.Id as DiagnosticIncrementalAnalyzer.ArgumentKey;
-                if (argumentKey == null)
+                var liveArgsId = args.Id as LiveDiagnosticUpdateArgsId;
+                if (liveArgsId == null)
                 {
                     return GetItemKey(data);
                 }
 
                 var documents = args.Solution.GetRelatedDocumentIds(args.DocumentId);
-                return new AggregatedKey(documents, argumentKey.Analyzer, argumentKey.StateType);
+                return new AggregatedKey(documents, liveArgsId.Analyzer, liveArgsId.Kind);
             }
 
             private void PopulateInitialData(Workspace workspace, IDiagnosticService diagnosticService)
@@ -367,7 +366,6 @@ namespace Microsoft.VisualStudio.LanguageServices.Implementation.TableDataSource
 
                     switch (value)
                     {
-
                         case WellKnownDiagnosticTags.Build:
                             // any error from build is highest priority
                             return ErrorRank.Lexical;

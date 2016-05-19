@@ -13,7 +13,9 @@
     <RootNamespace>Microsoft.CodeAnalysis.UnitTests</RootNamespace>
     <AssemblyName>Roslyn.Services.UnitTests</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <GenerateMSBuildBindingRedirects>true</GenerateMSBuildBindingRedirects>
   </PropertyGroup>
+
   <PropertyGroup Condition="'$(MSBuildAssemblyNameFragment)' == 'v12.0'">
     <DefineConstants>$(DefineConstants);MSBUILD12</DefineConstants>
   </PropertyGroup>
@@ -29,6 +31,10 @@
     <ProjectReference Include="..\..\Compilers\Test\Resources\Core\CompilerTestResources.csproj">
       <Project>{7FE6B002-89D8-4298-9B1B-0B5C247DD1FD}</Project>
       <Name>CompilerTestResources</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Dependencies\xUnit.net\xUnit.net.csproj">
+      <Project>{8635cb8f-d210-41ed-b4ff-71502cdb475c}</Project>
+      <Name>xUnit.net</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Test\Utilities\Portable.FX45\TestUtilities.FX45.csproj">
       <Project>{f7712928-1175-47b3-8819-ee086753dee2}</Project>
@@ -66,6 +72,7 @@
     <CodeAnalysisRuleSet>..\..\..\build\TestProjectRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="DependentTypeFinderTests.cs" />
     <Compile Include="Editting\SyntaxEditorTests.cs" />
     <Compile Include="ExtensionOrdererTests.cs" />
     <Compile Include="Host\WorkspaceServices\TestProjectCacheService.cs" />
@@ -73,6 +80,9 @@
     <Compile Include="LinkedFileDiffMerging\LinkedFileDiffMergingTests.TextMerging.cs" />
     <Compile Include="LinkedFileDiffMerging\LinkedFileDiffMergingTests.Features.cs" />
     <Compile Include="LinkedFileDiffMerging\LinkedFileDiffMergingTests.cs" />
+    <Compile Include="UtilityTest\StringEscapingTests.cs" />
+    <Compile Include="SymbolIdTests.cs" />
+    <Compile Include="ServicesTestBase.cs" />
     <Compile Include="UtilityTest\AsyncLazyTests.cs" />
     <Compile Include="CodeCleanup\AddMissingTokensTests.cs" />
     <Compile Include="CodeCleanup\CodeCleanupTests.cs" />
@@ -81,7 +91,9 @@
     <Compile Include="CodeCleanup\NormalizeModifiersOrOperatorsTests.cs" />
     <Compile Include="CodeCleanup\ReduceTokenTests.cs" />
     <Compile Include="CodeCleanup\RemoveUnnecessaryLineContinuationTests.cs" />
+    <Compile Include="UtilityTest\BKTreeTests.cs" />
     <Compile Include="UtilityTest\FilePathUtilitiesTests.cs" />
+    <Compile Include="UtilityTest\SpellCheckerTests.cs" />
     <Compile Include="WorkspaceTests\CommandLineProjectTests.cs" />
     <Compile Include="WorkspaceTests\AdhocWorkspaceTests.cs" />
     <Compile Include="Differencing\MatchTests.cs" />
@@ -101,6 +113,7 @@
     <Compile Include="GeneratedCodeRecognitionTests.cs" />
     <Compile Include="WorkspaceTests\MSBuildWorkspaceTests.cs" />
     <Compile Include="WorkspaceTests\MSBuildWorkspaceTestBase.cs" />
+    <Compile Include="WorkspaceTests\WorkspaceReferenceTests.cs" />
     <Compile Include="WorkspaceTests\WorkspaceTestBase.cs" />
     <Compile Include="SolutionTests\ProjectDependencyGraphTests.cs" />
     <Compile Include="SolutionTests\ProjectInfoTests.cs" />

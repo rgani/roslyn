@@ -71,6 +71,11 @@ namespace Microsoft.CodeAnalysis.Shared.Extensions
             return symbol?.TypeKind == TypeKind.Delegate;
         }
 
+        public static bool IsStructType(this ITypeSymbol symbol)
+        {
+            return symbol?.TypeKind == TypeKind.Struct;
+        }
+
         public static bool IsAnonymousType(this INamedTypeSymbol symbol)
         {
             return symbol?.IsAnonymousType == true;
@@ -290,7 +295,20 @@ namespace Microsoft.CodeAnalysis.Shared.Extensions
             }
         }
 
-        // Determine if "type" inherits from "baseType", ignoring constructed types, and dealing
+        // Determine if "type" inherits from "baseType", ignoring constructed types, optionally including interfaces,
+        // dealing only with original types.
+        public static bool InheritsFromOrEquals(
+            this ITypeSymbol type, ITypeSymbol baseType, bool includeInterfaces)
+        {
+            if (!includeInterfaces)
+            {
+                return InheritsFromOrEquals(type, baseType);
+            }
+
+            return type.GetBaseTypesAndThis().Concat(type.AllInterfaces).Contains(t => SymbolEquivalenceComparer.Instance.Equals(t, baseType));
+        }
+
+        // Determine if "type" inherits from "baseType", ignoring constructed types and interfaces, dealing
         // only with original types.
         public static bool InheritsFromOrEquals(
             this ITypeSymbol type, ITypeSymbol baseType)

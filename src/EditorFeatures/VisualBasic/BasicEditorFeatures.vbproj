@@ -50,13 +50,11 @@
     <DebugSymbols>true</DebugSymbols>
     <DefineDebug>true</DefineDebug>
     <DefineTrace>true</DefineTrace>
-    <DebugType>full</DebugType>
     <DocumentationFile>Microsoft.CodeAnalysis.VisualBasic.EditorFeatures.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <DefineTrace>true</DefineTrace>
     <Optimize>true</Optimize>
-    <DebugType>pdbonly</DebugType>
     <DocumentationFile>Microsoft.CodeAnalysis.VisualBasic.EditorFeatures.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
@@ -80,14 +78,13 @@
     <Compile Include="BraceMatching\LessThanGreaterThanBraceMatcher.vb" />
     <Compile Include="BraceMatching\OpenCloseBraceBraceMatcher.vb" />
     <Compile Include="BraceMatching\OpenCloseParenBraceMatcher.vb" />
+    <Compile Include="BraceMatching\VisualBasicDirectiveTriviaBraceMatcher.vb" />
     <Compile Include="BraceMatching\StringLiteralBraceMatcher.vb" />
     <Compile Include="CallHierarchy\CallHierarchyCommandHandler.vb" />
     <Compile Include="ChangeSignature\ChangeSignatureCommandHandler.vb" />
     <Compile Include="Classification\VisualBasicEditorClassificationService.vb" />
     <Compile Include="CommentSelection\VisualBasicCommentUncommentService.vb" />
-    <Compile Include="Completion\CompletionProviders\OverrideCompletionProvider.vb" />
-    <Compile Include="Completion\CompletionProviders\XmlDocCommentCompletionItemRules.vb" />
-    <Compile Include="Completion\CompletionProviders\XmlDocCommentCompletionProvider.vb" />
+    <Compile Include="Completion\VisualBasicCompletionHelper.vb" />
     <Compile Include="ContentType\ContentTypeDefinitions.vb" />
     <Compile Include="DocumentationComments\DocumentationCommentCommandHandler.vb" />
     <Compile Include="DocumentationComments\XmlTagCompletionCommandHandler.vb" />
@@ -171,8 +168,6 @@
     <Compile Include="NavigationBar\GenerateFinalizerItem.vb" />
     <Compile Include="NavigationBar\GenerateMethodItem.vb" />
     <Compile Include="NavigationBar\VisualBasicNavigationBarItemService.vb" />
-    <Compile Include="Outlining\BannerTextBuilder.vb" />
-    <Compile Include="Outlining\Outliners\AbstractSyntaxNodeOutliner.vb" />
     <Compile Include="Outlining\Outliners\AccessorDeclarationOutliner.vb" />
     <Compile Include="Outlining\Outliners\CompilationUnitOutliner.vb" />
     <Compile Include="Outlining\Outliners\ConstructorDeclarationOutliner.vb" />
@@ -209,30 +204,6 @@
     <Compile Include="ReferenceHighlighting\ReferenceHighlightingAdditionalReferenceProvider.vb" />
     <Compile Include="RenameTracking\BasicRenameTrackingLanguageHeuristicsService.vb" />
     <Compile Include="RenameTracking\RenameTrackingCodeFixProvider.vb" />
-    <Compile Include="SignatureHelp\AbstractIntrinsicOperatorSignatureHelpProvider.vb" />
-    <Compile Include="SignatureHelp\AbstractSignatureHelpProvider.vb" />
-    <Compile Include="SignatureHelp\AddRemoveHandlerSignatureHelpProvider.vb" />
-    <Compile Include="SignatureHelp\AttributeSignatureHelpProvider.vb" />
-    <Compile Include="SignatureHelp\CastExpressionSignatureHelpProvider.vb" />
-    <Compile Include="SignatureHelp\ConditionalExpressionSignatureHelpProvider.vb" />
-    <Compile Include="SignatureHelp\FunctionAggregationSignatureHelpProvider.vb" />
-    <Compile Include="SignatureHelp\GenericNameSignatureHelpProvider.Method.vb" />
-    <Compile Include="SignatureHelp\GenericNameSignatureHelpProvider.NamedType.vb" />
-    <Compile Include="SignatureHelp\GenericNameSignatureHelpProvider.vb" />
-    <Compile Include="SignatureHelp\GetTypeExpressionSignatureHelpProvider.vb" />
-    <Compile Include="SignatureHelp\GetXmlNamespaceExpressionSignatureHelpProvider.vb" />
-    <Compile Include="SignatureHelp\InvocationExpressionSignatureHelpProvider.DelegateInvoke.vb" />
-    <Compile Include="SignatureHelp\InvocationExpressionSignatureHelpProvider.ElementAccess.vb" />
-    <Compile Include="SignatureHelp\InvocationExpressionSignatureHelpProvider.MemberGroup.vb" />
-    <Compile Include="SignatureHelp\InvocationExpressionSignatureHelpProvider.vb" />
-    <Compile Include="SignatureHelp\MidAssignmentSignatureHelpProvider.vb" />
-    <Compile Include="SignatureHelp\NameOfExpressionSignatureHelpProvider.vb" />
-    <Compile Include="SignatureHelp\ObjectCreationExpressionSignatureHelpProvider.DelegateType.vb" />
-    <Compile Include="SignatureHelp\ObjectCreationExpressionSignatureHelpProvider.NormalType.vb" />
-    <Compile Include="SignatureHelp\ObjectCreationExpressionSignatureHelpProvider.vb" />
-    <Compile Include="SignatureHelp\PredefinedCastExpressionSignatureHelpProvider.vb" />
-    <Compile Include="SignatureHelp\RaiseEventStatementSignatureHelpProvider.vb" />
-    <Compile Include="SignatureHelp\SignatureHelpUtilities.vb" />
     <Compile Include="TextStructureNavigation\TextStructureNavigatorProvider.vb" />
     <Compile Include="TodoComment\BasicTodoCommentIncrementalAnalyzerProvider.vb" />
     <Compile Include="UseAutoProperty\UseAutoPropertyAnalyzer.vb" />
@@ -249,27 +220,6 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.VisualStudio.CoreUtility, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Language.Intellisense, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Language.StandardClassification, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Text.Data, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Text.Logic, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Text.UI, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Text.UI.Wpf, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>false</Private>
-    </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Xml.Linq" />

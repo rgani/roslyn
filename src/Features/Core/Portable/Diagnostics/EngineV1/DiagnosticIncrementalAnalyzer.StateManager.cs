@@ -41,11 +41,11 @@ namespace Microsoft.CodeAnalysis.Diagnostics.EngineV1
             public event EventHandler<ProjectAnalyzerReferenceChangedEventArgs> ProjectAnalyzerReferenceChanged;
 
             /// <summary>
-            /// Return <see cref="DiagnosticAnalyzer"/>s for the given <see cref="Project"/>.
+            /// Return existing or new <see cref="DiagnosticAnalyzer"/>s for the given <see cref="Project"/>.
             /// </summary>
-            public IEnumerable<DiagnosticAnalyzer> GetAnalyzers(Project project)
+            public IEnumerable<DiagnosticAnalyzer> GetOrCreateAnalyzers(Project project)
             {
-                return _hostStates.GetAnalyzers(project.Language).Concat(_projectStates.GetAnalyzers(project));
+                return _hostStates.GetAnalyzers(project.Language).Concat(_projectStates.GetOrCreateAnalyzers(project));
             }
 
             /// <summary>
@@ -116,6 +116,51 @@ namespace Microsoft.CodeAnalysis.Diagnostics.EngineV1
                 _projectStates.RemoveStateSet(projectId);
             }
 
+            /// <summary>
+            /// Return <see cref="StateSet"/>s that are added as the given <see cref="Project"/>'s AnalyzerReferences.
+            /// This will never create new <see cref="StateSet"/> but will return ones already created.
+            /// </summary>
+            public ImmutableArray<StateSet> CreateBuildOnlyProjectStateSet(Project project)
+            {
+                var referenceIdentities = project.AnalyzerReferences.Select(r => _analyzerManager.GetAnalyzerReferenceIdentity(r)).ToSet();
+                var stateSetMap = GetStateSets(project).ToDictionary(s => s.Analyzer, s => s);
+
+                var stateSets = ImmutableArray.CreateBuilder<StateSet>();
+
+                // we always include compiler analyzer in build only state
+                var compilerAnalyzer = _analyzerManager.GetCompilerDiagnosticAnalyzer(project.Language);
+                StateSet compilerStateSet;
+                if (stateSetMap.TryGetValue(compilerAnalyzer, out compilerStateSet))
+                {
+                    stateSets.Add(compilerStateSet);
+                }
+
+                var analyzerMap = _analyzerManager.GetHostDiagnosticAnalyzersPerReference(project.Language);
+                foreach (var kv in analyzerMap)
+                {
+                    var identity = kv.Key;
+                    if (!referenceIdentities.Contains(identity))
+                    {
+                        // it is from host analyzer package rather than project analyzer reference
+                        // which build doesn't have
+                        continue;
+                    }
+
+                    // if same analyzer exists both in host (vsix) and in analyzer reference,
+                    // we include it in build only analyzer.
+                    foreach (var analyzer in kv.Value)
+                    {
+                        StateSet stateSet;
+                        if (stateSetMap.TryGetValue(analyzer, out stateSet) && stateSet != compilerStateSet)
+                        {
+                            stateSets.Add(stateSet);
+                        }
+                    }
+                }
+
+                return stateSets.ToImmutable();
+            }
+
             private void RaiseProjectAnalyzerReferenceChanged(ProjectAnalyzerReferenceChangedEventArgs args)
             {
                 ProjectAnalyzerReferenceChanged?.Invoke(this, args);
@@ -178,7 +223,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics.EngineV1
                     {
                         var state = stateSet.GetState((StateType)i);
 
-                        if (!(set.Add(ValueTuple.Create(state.Language, state.Name))))
+                        if (!(set.Add(ValueTuple.Create(state.Language_TestingOnly, state.Name_TestingOnly))))
                         {
                             Contract.Fail();
                         }

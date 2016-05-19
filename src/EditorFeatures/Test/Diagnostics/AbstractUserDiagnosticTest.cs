@@ -15,6 +15,7 @@ using Microsoft.CodeAnalysis.Editor.UnitTests.Diagnostics.GenerateType;
 using Microsoft.CodeAnalysis.Editor.UnitTests.Workspaces;
 using Microsoft.CodeAnalysis.GenerateType;
 using Microsoft.CodeAnalysis.Options;
+using Microsoft.CodeAnalysis.Shared.Utilities;
 using Microsoft.CodeAnalysis.Text;
 using Microsoft.CodeAnalysis.UnitTests;
 using Microsoft.CodeAnalysis.UnitTests.Diagnostics;
@@ -27,18 +28,21 @@ namespace Microsoft.CodeAnalysis.Editor.UnitTests.Diagnostics
 {
     public abstract class AbstractUserDiagnosticTest : AbstractCodeActionOrUserDiagnosticTest
     {
-        internal abstract IEnumerable<Tuple<Diagnostic, CodeFixCollection>> GetDiagnosticAndFixes(TestWorkspace workspace, string fixAllActionEquivalenceKey);
-        internal abstract IEnumerable<Diagnostic> GetDiagnostics(TestWorkspace workspace);
+        internal abstract Task<IEnumerable<Tuple<Diagnostic, CodeFixCollection>>> GetDiagnosticAndFixesAsync(
+            TestWorkspace workspace, string fixAllActionEquivalenceKey, object fixProviderData);
+        internal abstract Task<IEnumerable<Diagnostic>> GetDiagnosticsAsync(TestWorkspace workspace, object fixProviderData);
 
-        protected override IList<CodeAction> GetCodeActionsWorker(TestWorkspace workspace, string fixAllActionEquivalenceKey)
+        protected override async Task<IList<CodeAction>> GetCodeActionsWorkerAsync(
+            TestWorkspace workspace, string fixAllActionEquivalenceKey, object fixProviderData)
         {
-            var diagnostics = GetDiagnosticAndFix(workspace, fixAllActionEquivalenceKey);
+            var diagnostics = await GetDiagnosticAndFixAsync(workspace, fixAllActionEquivalenceKey, fixProviderData);
             return diagnostics?.Item2?.Fixes.Select(f => f.Action).ToList();
         }
 
-        internal Tuple<Diagnostic, CodeFixCollection> GetDiagnosticAndFix(TestWorkspace workspace, string fixAllActionEquivalenceKey = null)
+        internal async Task<Tuple<Diagnostic, CodeFixCollection>> GetDiagnosticAndFixAsync(
+            TestWorkspace workspace, string fixAllActionEquivalenceKey = null, object fixProviderData = null)
         {
-            return GetDiagnosticAndFixes(workspace, fixAllActionEquivalenceKey).FirstOrDefault();
+            return (await GetDiagnosticAndFixesAsync(workspace, fixAllActionEquivalenceKey, fixProviderData)).FirstOrDefault();
         }
 
         protected Document GetDocumentAndSelectSpan(TestWorkspace workspace, out TextSpan span)
@@ -97,7 +101,7 @@ namespace Microsoft.CodeAnalysis.Editor.UnitTests.Diagnostics
             throw new InvalidProgramException("Incorrect FixAll annotation in test");
         }
 
-        internal IEnumerable<Tuple<Diagnostic, CodeFixCollection>> GetDiagnosticAndFixes(
+        internal async Task<IEnumerable<Tuple<Diagnostic, CodeFixCollection>>> GetDiagnosticAndFixesAsync(
             IEnumerable<Diagnostic> diagnostics,
             DiagnosticAnalyzer provider,
             CodeFixProvider fixer,
@@ -113,10 +117,10 @@ namespace Microsoft.CodeAnalysis.Editor.UnitTests.Diagnostics
             }
 
             FixAllScope? scope = GetFixAllScope(annotation);
-            return GetDiagnosticAndFixes(diagnostics, provider, fixer, testDriver, document, span, scope, fixAllActionId);
+            return await GetDiagnosticAndFixesAsync(diagnostics, provider, fixer, testDriver, document, span, scope, fixAllActionId);
         }
 
-        private IEnumerable<Tuple<Diagnostic, CodeFixCollection>> GetDiagnosticAndFixes(
+        private async Task<IEnumerable<Tuple<Diagnostic, CodeFixCollection>>> GetDiagnosticAndFixesAsync(
             IEnumerable<Diagnostic> diagnostics,
             DiagnosticAnalyzer provider,
             CodeFixProvider fixer,
@@ -127,7 +131,7 @@ namespace Microsoft.CodeAnalysis.Editor.UnitTests.Diagnostics
             string fixAllActionId)
         {
             Assert.NotEmpty(diagnostics);
-
+            var result = new List<Tuple<Diagnostic, CodeFixCollection>>();
             if (scope == null)
             {
                 // Simple code fix.
@@ -136,11 +140,13 @@ namespace Microsoft.CodeAnalysis.Editor.UnitTests.Diagnostics
                     var fixes = new List<CodeFix>();
                     var context = new CodeFixContext(document, diagnostic, (a, d) => fixes.Add(new CodeFix(document.Project, a, d)), CancellationToken.None);
 
-                    fixer.RegisterCodeFixesAsync(context).Wait();
+                    await fixer.RegisterCodeFixesAsync(context);
                     if (fixes.Any())
                     {
-                        var codeFix = new CodeFixCollection(fixer, diagnostic.Location.SourceSpan, fixes);
-                        yield return Tuple.Create(diagnostic, codeFix);
+                        var codeFix = new CodeFixCollection(
+                            fixer, diagnostic.Location.SourceSpan, fixes,
+                            fixAllState: null, supportedScopes: null, firstDiagnostic: null);
+                        result.Add(Tuple.Create(diagnostic, codeFix));
                     }
                 }
             }
@@ -150,22 +156,28 @@ namespace Microsoft.CodeAnalysis.Editor.UnitTests.Diagnostics
                 var fixAllProvider = fixer.GetFixAllProvider();
                 Assert.NotNull(fixAllProvider);
 
-                var fixAllContext = GetFixAllContext(diagnostics, provider, fixer, testDriver, document, scope.Value, fixAllActionId);
-                var fixAllFix = fixAllProvider.GetFixAsync(fixAllContext).WaitAndGetResult(CancellationToken.None);
+                var fixAllState = GetFixAllState(fixAllProvider, diagnostics, provider, fixer, testDriver, document, scope.Value, fixAllActionId);
+                var fixAllContext = fixAllState.CreateFixAllContext(new ProgressTracker(), CancellationToken.None);
+                var fixAllFix = await fixAllProvider.GetFixAsync(fixAllContext);
                 if (fixAllFix != null)
                 {
                     // Same fix applies to each diagnostic in scope.
                     foreach (var diagnostic in diagnostics)
                     {
                         var diagnosticSpan = diagnostic.Location.IsInSource ? diagnostic.Location.SourceSpan : default(TextSpan);
-                        var codeFix = new CodeFixCollection(fixAllProvider, diagnosticSpan, ImmutableArray.Create(new CodeFix(document.Project, fixAllFix, diagnostic)));
-                        yield return Tuple.Create(diagnostic, codeFix);
+                        var codeFix = new CodeFixCollection(
+                            fixAllProvider, diagnosticSpan, ImmutableArray.Create(new CodeFix(document.Project, fixAllFix, diagnostic)),
+                            fixAllState: null, supportedScopes: null, firstDiagnostic: null);
+                        result.Add(Tuple.Create(diagnostic, codeFix));
                     }
                 }
             }
+
+            return result;
         }
 
-        private static FixAllContext GetFixAllContext(
+        private static FixAllState GetFixAllState(
+            FixAllProvider fixAllProvider,
             IEnumerable<Diagnostic> diagnostics,
             DiagnosticAnalyzer provider,
             CodeFixProvider fixer,
@@ -180,82 +192,87 @@ namespace Microsoft.CodeAnalysis.Editor.UnitTests.Diagnostics
             {
                 // Bulk fixing diagnostics in selected scope.                    
                 var diagnosticsToFix = ImmutableDictionary.CreateRange(SpecializedCollections.SingletonEnumerable(KeyValuePair.Create(document, diagnostics.ToImmutableArray())));
-                return FixMultipleContext.Create(diagnosticsToFix, fixer, fixAllActionId, CancellationToken.None);
+                return FixAllState.Create(fixAllProvider, diagnosticsToFix, fixer, fixAllActionId);
             }
 
             var diagnostic = diagnostics.First();
             Func<Document, ImmutableHashSet<string>, CancellationToken, Task<IEnumerable<Diagnostic>>> getDocumentDiagnosticsAsync =
-                (d, diagIds, c) =>
+                async (d, diagIds, c) =>
                 {
-                    var root = d.GetSyntaxRootAsync().Result;
-                    var diags = testDriver.GetDocumentDiagnostics(provider, d, root.FullSpan);
+                    var root = await d.GetSyntaxRootAsync();
+                    var diags = await testDriver.GetDocumentDiagnosticsAsync(provider, d, root.FullSpan);
                     diags = diags.Where(diag => diagIds.Contains(diag.Id));
-                    return Task.FromResult(diags);
+                    return diags;
                 };
 
             Func<Project, bool, ImmutableHashSet<string>, CancellationToken, Task<IEnumerable<Diagnostic>>> getProjectDiagnosticsAsync =
-                (p, includeAllDocumentDiagnostics, diagIds, c) =>
+                async (p, includeAllDocumentDiagnostics, diagIds, c) =>
                 {
-                    var diags = includeAllDocumentDiagnostics ?
-                        testDriver.GetAllDiagnostics(provider, p) :
-                        testDriver.GetProjectDiagnostics(provider, p);
+                    var diags = includeAllDocumentDiagnostics
+                        ? await testDriver.GetAllDiagnosticsAsync(provider, p)
+                        : await testDriver.GetProjectDiagnosticsAsync(provider, p);
                     diags = diags.Where(diag => diagIds.Contains(diag.Id));
-                    return Task.FromResult(diags);
+                    return diags;
                 };
 
             var diagnosticIds = ImmutableHashSet.Create(diagnostic.Id);
-            var fixAllDiagnosticProvider = new FixAllCodeActionContext.FixAllDiagnosticProvider(diagnosticIds, getDocumentDiagnosticsAsync, getProjectDiagnosticsAsync);
-            return diagnostic.Location.IsInSource ?
-                new FixAllContext(document, fixer, scope, fixAllActionId, diagnosticIds, fixAllDiagnosticProvider, CancellationToken.None) :
-                new FixAllContext(document.Project, fixer, scope, fixAllActionId, diagnosticIds, fixAllDiagnosticProvider, CancellationToken.None);
+            var fixAllDiagnosticProvider = new FixAllState.FixAllDiagnosticProvider(diagnosticIds, getDocumentDiagnosticsAsync, getProjectDiagnosticsAsync);
+            return diagnostic.Location.IsInSource
+                ? new FixAllState(fixAllProvider, document, fixer, scope, fixAllActionId, diagnosticIds, fixAllDiagnosticProvider)
+                : new FixAllState(fixAllProvider, document.Project, fixer, scope, fixAllActionId, diagnosticIds, fixAllDiagnosticProvider);
         }
 
-        protected void TestEquivalenceKey(string initialMarkup, string equivalenceKey)
+        protected async Task TestEquivalenceKeyAsync(string initialMarkup, string equivalenceKey)
         {
-            using (var workspace = CreateWorkspaceFromFile(initialMarkup, parseOptions: null, compilationOptions: null))
+            using (var workspace = await CreateWorkspaceFromFileAsync(initialMarkup, parseOptions: null, compilationOptions: null))
             {
-                var diagnosticAndFix = GetDiagnosticAndFix(workspace);
+                var diagnosticAndFix = await GetDiagnosticAndFixAsync(workspace);
                 Assert.Equal(equivalenceKey, diagnosticAndFix.Item2.Fixes.ElementAt(index: 0).Action.EquivalenceKey);
             }
         }
 
-        protected void TestActionCountInAllFixes(
+        protected async Task TestActionCountInAllFixesAsync(
             string initialMarkup,
             int count,
-            ParseOptions parseOptions = null, CompilationOptions compilationOptions = null)
+            ParseOptions parseOptions = null,
+            CompilationOptions compilationOptions = null,
+            object fixProviderData = null)
         {
-            using (var workspace = CreateWorkspaceFromFile(initialMarkup, parseOptions, compilationOptions))
+            using (var workspace = await CreateWorkspaceFromFileAsync(initialMarkup, parseOptions, compilationOptions))
             {
-                var diagnosticAndFix = GetDiagnosticAndFixes(workspace, null);
+                var diagnosticAndFix = await GetDiagnosticAndFixesAsync(workspace, fixAllActionEquivalenceKey: null, fixProviderData: fixProviderData);
                 var diagnosticCount = diagnosticAndFix.Select(x => x.Item2.Fixes.Count()).Sum();
 
                 Assert.Equal(count, diagnosticCount);
             }
         }
 
-        protected void TestSpans(
+        protected async Task TestSpansAsync(
             string initialMarkup, string expectedMarkup,
             int index = 0,
-            ParseOptions parseOptions = null, CompilationOptions compilationOptions = null,
-            string diagnosticId = null, string fixAllActionEquivalenceId = null)
+            ParseOptions parseOptions = null,
+            CompilationOptions compilationOptions = null,
+            string diagnosticId = null,
+            string fixAllActionEquivalenceId = null,
+            object fixProviderData = null)
         {
             IList<TextSpan> spansList;
             string unused;
             MarkupTestFile.GetSpans(expectedMarkup, out unused, out spansList);
 
             var expectedTextSpans = spansList.ToSet();
-            using (var workspace = CreateWorkspaceFromFile(initialMarkup, parseOptions, compilationOptions))
+            using (var workspace = await CreateWorkspaceFromFileAsync(initialMarkup, parseOptions, compilationOptions))
             {
                 ISet<TextSpan> actualTextSpans;
                 if (diagnosticId == null)
                 {
-                    var diagnosticsAndFixes = GetDiagnosticAndFixes(workspace, fixAllActionEquivalenceId);
+                    var diagnosticsAndFixes = await GetDiagnosticAndFixesAsync(workspace, fixAllActionEquivalenceId, fixProviderData);
                     var diagnostics = diagnosticsAndFixes.Select(t => t.Item1);
                     actualTextSpans = diagnostics.Select(d => d.Location.SourceSpan).ToSet();
                 }
                 else
                 {
-                    var diagnostics = GetDiagnostics(workspace);
+                    var diagnostics = await GetDiagnosticsAsync(workspace, fixProviderData);
                     actualTextSpans = diagnostics.Where(d => d.Id == diagnosticId).Select(d => d.Location.SourceSpan).ToSet();
                 }
 
@@ -270,8 +287,8 @@ namespace Microsoft.CodeAnalysis.Editor.UnitTests.Diagnostics
             int index = 0,
             bool compareTokens = true, bool isLine = true)
         {
-            await TestAddDocument(initialMarkup, expectedMarkup, index, expectedContainers, expectedDocumentName, null, null, compareTokens, isLine).ConfigureAwait(true);
-            await TestAddDocument(initialMarkup, expectedMarkup, index, expectedContainers, expectedDocumentName, GetScriptOptions(), null, compareTokens, isLine).ConfigureAwait(true);
+            await TestAddDocument(initialMarkup, expectedMarkup, index, expectedContainers, expectedDocumentName, null, null, compareTokens, isLine);
+            await TestAddDocument(initialMarkup, expectedMarkup, index, expectedContainers, expectedDocumentName, GetScriptOptions(), null, compareTokens, isLine);
         }
 
         private async Task TestAddDocument(
@@ -282,11 +299,13 @@ namespace Microsoft.CodeAnalysis.Editor.UnitTests.Diagnostics
             ParseOptions parseOptions, CompilationOptions compilationOptions,
             bool compareTokens, bool isLine)
         {
-            using (var workspace = isLine ? CreateWorkspaceFromFile(initialMarkup, parseOptions, compilationOptions) : TestWorkspaceFactory.CreateWorkspace(initialMarkup))
+            using (var workspace = isLine
+                ? await CreateWorkspaceFromFileAsync(initialMarkup, parseOptions, compilationOptions)
+                : await TestWorkspace.CreateAsync(initialMarkup))
             {
-                var codeActions = GetCodeActions(workspace, fixAllActionEquivalenceKey: null);
+                var codeActions = await GetCodeActionsAsync(workspace, fixAllActionEquivalenceKey: null);
                 await TestAddDocument(workspace, expectedMarkup, index, expectedContainers, expectedDocumentName,
-                    codeActions, compareTokens).ConfigureAwait(true);
+                    codeActions, compareTokens);
             }
         }
 
@@ -299,7 +318,7 @@ namespace Microsoft.CodeAnalysis.Editor.UnitTests.Diagnostics
             IList<CodeAction> actions,
             bool compareTokens)
         {
-            var operations = VerifyInputsAndGetOperations(index, actions);
+            var operations = await VerifyInputsAndGetOperationsAsync(index, actions);
             await TestAddDocument(
                 workspace,
                 expectedMarkup,
@@ -308,7 +327,7 @@ namespace Microsoft.CodeAnalysis.Editor.UnitTests.Diagnostics
                 modifiedProjectId: null,
                 expectedFolders: expectedFolders,
                 expectedDocumentName: expectedDocumentName,
-                compareTokens: compareTokens).ConfigureAwait(true);
+                compareTokens: compareTokens);
         }
 
         private async Task<Tuple<Solution, Solution>> TestAddDocument(
@@ -343,18 +362,18 @@ namespace Microsoft.CodeAnalysis.Editor.UnitTests.Diagnostics
             if (compareTokens)
             {
                 TokenUtilities.AssertTokensEqual(
-                    expected, addedDocument.GetTextAsync().Result.ToString(), GetLanguage());
+                    expected, (await addedDocument.GetTextAsync()).ToString(), GetLanguage());
             }
             else
             {
-                Assert.Equal(expected, addedDocument.GetTextAsync().Result.ToString());
+                Assert.Equal(expected, (await addedDocument.GetTextAsync()).ToString());
             }
 
             var editHandler = workspace.ExportProvider.GetExportedValue<ICodeActionEditHandlerService>();
             if (!hasProjectChange)
             {
                 // If there is just one document change then we expect the preview to be a WpfTextView
-                var content = await editHandler.GetPreviews(workspace, operations, CancellationToken.None).TakeNextPreviewAsync().ConfigureAwait(true);
+                var content = (await editHandler.GetPreviews(workspace, operations, CancellationToken.None).GetPreviewsAsync())[0];
                 var diffView = content as IWpfDifferenceViewer;
                 Assert.NotNull(diffView);
                 diffView.Close();
@@ -364,15 +383,21 @@ namespace Microsoft.CodeAnalysis.Editor.UnitTests.Diagnostics
                 // If there are more changes than just the document we need to browse all the changes and get the document change
                 var contents = editHandler.GetPreviews(workspace, operations, CancellationToken.None);
                 bool hasPreview = false;
-                object preview;
-                while ((preview = await contents.TakeNextPreviewAsync().ConfigureAwait(true)) != null)
+                var previews = await contents.GetPreviewsAsync();
+                if (previews != null)
                 {
-                    var diffView = preview as IWpfDifferenceViewer;
-                    if (diffView != null)
+                    foreach (var preview in previews)
                     {
-                        hasPreview = true;
-                        diffView.Close();
-                        break;
+                        if (preview != null)
+                        {
+                            var diffView = preview as IWpfDifferenceViewer;
+                            if (diffView != null)
+                            {
+                                hasPreview = true;
+                                diffView.Close();
+                                break;
+                            }
+                        }
                     }
                 }
 
@@ -408,7 +433,7 @@ namespace Microsoft.CodeAnalysis.Editor.UnitTests.Diagnostics
             IList<TypeKindOptions> assertTypeKindAbsent = null,
             bool isCancelled = false)
         {
-            using (var testState = new GenerateTypeTestState(initial, isLine, projectName, typeName, existingFilename, languageName))
+            using (var testState = await GenerateTypeTestState.CreateAsync(initial, isLine, projectName, typeName, existingFilename, languageName))
             {
                 // Initialize the viewModel values
                 testState.TestGenerateTypeOptionsService.SetGenerateTypeOptions(
@@ -427,7 +452,7 @@ namespace Microsoft.CodeAnalysis.Editor.UnitTests.Diagnostics
                 testState.TestProjectManagementService.SetDefaultNamespace(
                     defaultNamespace: defaultNamespace);
 
-                var diagnosticsAndFixes = GetDiagnosticAndFixes(testState.Workspace, null);
+                var diagnosticsAndFixes = await GetDiagnosticAndFixesAsync(testState.Workspace, fixAllActionEquivalenceKey: null, fixProviderData: null);
                 var generateTypeDiagFixes = diagnosticsAndFixes.SingleOrDefault(df => GenerateTypeTestState.FixIds.Contains(df.Item1.Id));
 
                 if (isMissing)
@@ -447,12 +472,12 @@ namespace Microsoft.CodeAnalysis.Editor.UnitTests.Diagnostics
                 var action = fixActions.ElementAt(index);
 
                 Assert.Equal(action.Title, FeaturesResources.GenerateNewType);
-                var operations = action.GetOperationsAsync(CancellationToken.None).Result;
+                var operations = await action.GetOperationsAsync(CancellationToken.None);
                 Tuple<Solution, Solution> oldSolutionAndNewSolution = null;
 
                 if (!isNewFile)
                 {
-                    oldSolutionAndNewSolution = TestOperations(
+                    oldSolutionAndNewSolution = await TestOperationsAsync(
                         testState.Workspace, expected, operations,
                         conflictSpans: null, renameSpans: null, warningSpans: null,
                         compareTokens: false, expectedChangedDocumentId: testState.ExistingDocument.Id);
@@ -467,13 +492,13 @@ namespace Microsoft.CodeAnalysis.Editor.UnitTests.Diagnostics
                         testState.ProjectToBeModified.Id,
                         newFileFolderContainers,
                         newFileName,
-                        compareTokens: false).ConfigureAwait(true);
+                        compareTokens: false);
                 }
 
                 if (checkIfUsingsIncluded)
                 {
                     Assert.NotNull(expectedTextWithUsings);
-                    TestOperations(testState.Workspace, expectedTextWithUsings, operations,
+                    await TestOperationsAsync(testState.Workspace, expectedTextWithUsings, operations,
                         conflictSpans: null, renameSpans: null, warningSpans: null, compareTokens: false,
                         expectedChangedDocumentId: testState.InvocationDocument.Id);
                 }

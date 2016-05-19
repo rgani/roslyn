@@ -86,9 +86,9 @@ namespace Microsoft.CodeAnalysis
         public abstract string GetMessagePrefix(string id, DiagnosticSeverity severity, bool isWarningAsError, CultureInfo culture);
 
         /// <summary>
-        /// convert given symbol to string representation based on given error code
+        /// Convert given symbol to string representation.
         /// </summary>
-        public abstract string ConvertSymbolToString(int errorCode, ISymbol symbol);
+        public abstract string GetErrorDisplayString(ISymbol symbol);
 
         /// <summary>
         /// Given an error code (like 1234) return the identifier (CS1234 or BC1234).
@@ -155,6 +155,7 @@ namespace Microsoft.CodeAnalysis
 
         // compilation options:
         public abstract int ERR_BadCompilationOptionValue { get; }
+        public abstract int ERR_MutuallyExclusiveOptions { get; }
 
         // emit options:
         public abstract int ERR_InvalidDebugInformationFormat { get; }
@@ -202,6 +203,10 @@ namespace Microsoft.CodeAnalysis
         // PE writing:
         public abstract int ERR_MetadataNameTooLong { get; }
         public abstract int ERR_EncReferenceToAddedMember { get; }
+        public abstract int ERR_TooManyUserStrings { get; }
+        public abstract int ERR_PeWritingFailure { get; }
+        public abstract int ERR_ModuleEmitFailure { get; }
+        public abstract int ERR_EncUpdateFailedMissingAttribute { get; }
 
         public abstract void ReportInvalidAttributeArgument(DiagnosticBag diagnostics, SyntaxNode attributeSyntax, int parameterIndex, AttributeData attribute);
         public abstract void ReportInvalidNamedArgument(DiagnosticBag diagnostics, SyntaxNode attributeSyntax, int namedArgumentIndex, ITypeSymbol attributeClass, string parameterName);

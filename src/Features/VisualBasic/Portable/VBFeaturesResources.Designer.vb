@@ -237,15 +237,6 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.VBFeaturesResources
         End Property
         
         '''<summary>
-        '''  Looks up a localized string similar to Await.
-        '''</summary>
-        Friend ReadOnly Property Await() As String
-            Get
-                Return ResourceManager.GetString("Await", resourceCulture)
-            End Get
-        End Property
-        
-        '''<summary>
         '''  Looks up a localized string similar to Awaitable.
         '''</summary>
         Friend ReadOnly Property Awaitable() As String
@@ -2313,6 +2304,15 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.VBFeaturesResources
         End Property
         
         '''<summary>
+        '''  Looks up a localized string similar to Properties.
+        '''</summary>
+        Friend ReadOnly Property Properties() As String
+            Get
+                Return ResourceManager.GetString("Properties", resourceCulture)
+            End Get
+        End Property
+        
+        '''<summary>
         '''  Looks up a localized string similar to property accessor.
         '''</summary>
         Friend ReadOnly Property PropertyAccessor() As String
@@ -2392,6 +2392,15 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.VBFeaturesResources
         Friend ReadOnly Property ReDimKeywordToolTip() As String
             Get
                 Return ResourceManager.GetString("ReDimKeywordToolTip", resourceCulture)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Looks up a localized string similar to Add a metadata reference to specified assembly and all its dependencies, e.g. #r &quot;myLib.dll&quot;..
+        '''</summary>
+        Friend ReadOnly Property ReferenceKeywordTooltip() As String
+            Get
+                Return ResourceManager.GetString("ReferenceKeywordTooltip", resourceCulture)
             End Get
         End Property
         

@@ -15,7 +15,9 @@ using Roslyn.Utilities;
 
 namespace Microsoft.CodeAnalysis.Diagnostics
 {
-    [ExportIncrementalAnalyzerProvider(highPriorityForActiveFile: true, workspaceKinds: new string[] { WorkspaceKind.Host, WorkspaceKind.Interactive })]
+    [ExportIncrementalAnalyzerProvider(
+        highPriorityForActiveFile: true, name: WellKnownSolutionCrawlerAnalyzers.Diagnostic, 
+        workspaceKinds: new string[] { WorkspaceKind.Host, WorkspaceKind.Interactive })]
     internal partial class DiagnosticAnalyzerService : IIncrementalAnalyzerProvider
     {
         private readonly ConditionalWeakTable<Workspace, BaseDiagnosticIncrementalAnalyzer> _map;
@@ -126,6 +128,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
                 return e.Option.Feature == SimplificationOptions.PerLanguageFeatureName ||
                        e.Option.Feature == SimplificationOptions.NonPerLanguageFeatureName ||
                        e.Option == ServiceFeatureOnOffOptions.ClosedFileDiagnostic ||
+                       e.Option == RuntimeOptions.FullSolutionAnalysis ||
                        e.Option == InternalDiagnosticsOptions.UseDiagnosticEngineV2 ||
                        Analyzer.NeedsReanalysisOnOptionChanged(sender, e);
             }
@@ -171,17 +174,17 @@ namespace Microsoft.CodeAnalysis.Diagnostics
             {
                 return Analyzer.GetDiagnosticsForSpanAsync(document, range, includeSuppressedDiagnostics, cancellationToken);
             }
+
+            public override bool ContainsDiagnostics(Workspace workspace, ProjectId projectId)
+            {
+                return Analyzer.ContainsDiagnostics(workspace, projectId);
+            }
             #endregion
 
             #region build synchronization
-            public override Task SynchronizeWithBuildAsync(Project project, ImmutableArray<DiagnosticData> diagnostics)
+            public override Task SynchronizeWithBuildAsync(Workspace workspace, ImmutableDictionary<ProjectId, ImmutableArray<DiagnosticData>> diagnostics)
             {
-                return Analyzer.SynchronizeWithBuildAsync(project, diagnostics);
-            }
-
-            public override Task SynchronizeWithBuildAsync(Document document, ImmutableArray<DiagnosticData> diagnostics)
-            {
-                return Analyzer.SynchronizeWithBuildAsync(document, diagnostics);
+                return Analyzer.SynchronizeWithBuildAsync(workspace, diagnostics);
             }
             #endregion
 
